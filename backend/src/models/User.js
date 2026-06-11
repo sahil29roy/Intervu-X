@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
         enum: ["admin", "interviewer", "candidate"],
         default: "candidate"
     },
-    profilePic: {
+    profilePicture: {
         type: String,
         default: ""
     },
@@ -30,11 +30,63 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    headline: {
+        type: String,
+        default: ""
+    },
+    bio: {
+        type: String,
+        default: ""
+    },
+    designation: {
+        type: String,
+        default: ""
+    },
+    company: {
+        type: String,
+        default: ""
+    },
+    yearsOfExperience: {
+        type: Number,
+        default: null
+    },
     skills: {
         type: [String],
         default: []
     },
+    githubLink: {
+        type: String,
+        default: ""
+    },
+    linkedinLink: {
+        type: String,
+        default: ""
+    },
+    portfolioLink: {
+        type: String,
+        default: ""
+    },
+    expertiseAreas: {
+        type: [String],
+        default: []
+    },
+    education: {
+        degree: { type: String, default: "" },
+        branch: { type: String, default: "" },
+        college: { type: String, default: "" },
+        startYear: { type: Number, default: null },
+        endYear: { type: Number, default: null },
+        cgpa: { type: Number, default: null }
+    },
     resumeUrl: {
+        type: String,
+        default: ""
+    },
+    preferredRole: {
+        type: String,
+        default: ""
+    },
+    preferredLocation: {
         type: String,
         default: ""
     },

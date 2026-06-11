@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { z } from "zod";
 import User from "../models/User.js";
 import { ENV } from "../lib/env.js";
 
@@ -10,23 +11,38 @@ const generateToken = (userId) => {
     });
 };
 
+// Zod Validation Schemas
+const registerSchema = z.object({
+    name: z.string().min(1, "Name is required").trim(),
+    email: z.string().email("Invalid email format").trim().toLowerCase(),
+    password: z.string().min(6, "Password must be at least 6 characters long"),
+    role: z.enum(["admin", "interviewer", "candidate"]).optional().default("candidate"),
+    profilePicture: z.string().optional().default(""),
+    phone: z.string().optional().default(""),
+    skills: z.array(z.string()).optional().default([]),
+    resumeUrl: z.string().optional().default("")
+});
+
+const loginSchema = z.object({
+    email: z.string().email("Invalid email format").trim().toLowerCase(),
+    password: z.string().min(1, "Password is required")
+});
+
 // Register User
 export const register = async (req, res) => {
     try {
-        const { name, email, password, role, phone, skills, resumeUrl } = req.body;
-
-        // Validation
-        if (!name || !email || !password) {
-            return res.status(400).json({ message: "Name, email, and password are required" });
+        const parsed = registerSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: parsed.error.flatten().fieldErrors
+            });
         }
 
-        // Validate role if provided
-        if (role && !["admin", "interviewer", "candidate"].includes(role)) {
-            return res.status(400).json({ message: "Invalid role. Must be candidate, interviewer, or admin." });
-        }
+        const { name, email, password, role, profilePicture, phone, skills, resumeUrl } = parsed.data;
 
         // Check if user already exists
-        const userExists = await User.findOne({ email: email.toLowerCase() });
+        const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ message: "Email is already registered" });
         }
@@ -37,19 +53,20 @@ export const register = async (req, res) => {
         // Create new User
         const newUser = await User.create({
             name,
-            email: email.toLowerCase(),
+            email,
             password: hashedPassword,
-            role: role || "candidate",
-            phone: phone || "",
-            skills: skills || [],
-            resumeUrl: resumeUrl || "",
+            role,
+            profilePicture,
+            phone,
+            skills,
+            resumeUrl,
             isActive: true
         });
 
         // Generate JWT
         const token = generateToken(newUser._id);
 
-        // Set JWT as cookie (optional fallback for web clients)
+        // Set JWT as cookie
         res.cookie("jwt", token, {
             httpOnly: true,
             secure: ENV.NODE_ENV === "production",
@@ -57,21 +74,13 @@ export const register = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in ms
         });
 
-        // Respond with user details (excluding password) and token
+        // Respond with user details
+        const userJson = newUser.toJSON();
+        delete userJson.password;
+
         return res.status(201).json({
             token,
-            user: {
-                _id: newUser._id,
-                name: newUser.name,
-                email: newUser.email,
-                role: newUser.role,
-                phone: newUser.phone,
-                skills: newUser.skills,
-                resumeUrl: newUser.resumeUrl,
-                isActive: newUser.isActive,
-                createdAt: newUser.createdAt,
-                updatedAt: newUser.updatedAt
-            }
+            user: userJson
         });
     } catch (error) {
         console.error("Error in register controller:", error.message);
@@ -82,15 +91,18 @@ export const register = async (req, res) => {
 // Login User
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
-
-        // Validation
-        if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required" });
+        const parsed = loginSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: parsed.error.flatten().fieldErrors
+            });
         }
 
+        const { email, password } = parsed.data;
+
         // Find user by email
-        const user = await User.findOne({ email: email.toLowerCase() });
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
@@ -117,21 +129,13 @@ export const login = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in ms
         });
 
-        // Respond with user details and token
+        // Respond with user details
+        const userJson = user.toJSON();
+        delete userJson.password;
+
         return res.status(200).json({
             token,
-            user: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone,
-                skills: user.skills,
-                resumeUrl: user.resumeUrl,
-                isActive: user.isActive,
-                createdAt: user.createdAt,
-                updatedAt: user.updatedAt
-            }
+            user: userJson
         });
     } catch (error) {
         console.error("Error in login controller:", error.message);
@@ -142,7 +146,6 @@ export const login = async (req, res) => {
 // Get authenticated user details
 export const getMe = async (req, res) => {
     try {
-        // req.user is already populated by protectRoute middleware
         return res.status(200).json({ user: req.user });
     } catch (error) {
         console.error("Error in getMe controller:", error.message);
