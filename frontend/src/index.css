@@ -473,3 +473,549 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ==========================================================================
+   Profile Page Layout & Elements
+   ========================================================================== */
+
+/* Two-column layout */
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+@media (min-width: 768px) {
+  .profile-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+}
+
+/* Sidebar sticky styling */
+.profile-sidebar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .profile-sidebar {
+    position: sticky;
+    top: 32px;
+  }
+}
+
+.profile-sidebar-card {
+  background-color: #212121;
+  border: 1px solid #333333;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.profile-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* Gap between cards */
+}
+
+/* Avatar Components */
+.ui-avatar {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #1A1A1A;
+  border: 2px solid #333333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  user-select: none;
+}
+
+.ui-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ui-avatar-fallback {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #EDEDED;
+}
+
+/* Avatar Upload Overlay */
+.avatar-upload-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.avatar-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none; /* Let clicks pass to the input below */
+  z-index: 10;
+}
+
+.avatar-upload-container:hover .avatar-upload-overlay {
+  opacity: 1;
+}
+
+.avatar-upload-icon {
+  color: #D97706;
+  width: 24px;
+  height: 24px;
+}
+
+.avatar-file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  z-index: 20;
+}
+
+/* Sidebar Information details */
+.profile-sidebar-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #EDEDED;
+  margin-bottom: 6px;
+}
+
+.profile-sidebar-headline {
+  color: #9CA3AF;
+  font-size: 13px;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.profile-sidebar-actions {
+  margin-top: 20px;
+  width: 100%;
+}
+
+/* Badges Styling */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: capitalize;
+}
+
+.ui-badge-default {
+  background-color: #333333;
+  color: #EDEDED;
+}
+
+.ui-badge-outline {
+  border: 1px solid #333333;
+  color: #9CA3AF;
+}
+
+/* Role-specific color codes */
+.ui-badge-teal {
+  background-color: rgba(20, 184, 166, 0.15); /* bg-opacity-15 */
+  color: #14B8A6;
+  border: 1px solid rgba(20, 184, 166, 0.3);
+}
+
+.ui-badge-amber {
+  background-color: rgba(217, 119, 6, 0.15);
+  color: #D97706;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+.ui-badge-coral {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Separator Components */
+.ui-separator {
+  background-color: #333333;
+}
+
+.ui-separator-horizontal {
+  height: 1px;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.ui-separator-vertical {
+  width: 1px;
+  height: 100%;
+  margin: 0 16px;
+}
+
+/* Textarea styling */
+.ui-textarea {
+  width: 100%;
+  background-color: #1A1A1A;
+  border: 1px solid #333333;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #EDEDED;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ui-textarea:focus {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+/* Quick Stats Widget */
+.profile-stats-card {
+  background-color: #212121;
+  border: 1px solid #333333;
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+.profile-stats-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #EDEDED;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stats-grid-full {
+  grid-template-columns: 1fr;
+}
+
+.stat-item {
+  background-color: #1A1A1A;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.2s ease;
+}
+
+.stat-item:hover {
+  border-color: #444444;
+}
+
+.stat-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #EDEDED;
+}
+
+.stat-label {
+  font-family: 'Inter', sans-serif;
+  color: #9CA3AF;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Right main content section cards */
+.profile-section-card {
+  background-color: #212121;
+  border: 1px solid #333333;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #2A2A2A;
+  padding-bottom: 12px;
+}
+
+.profile-section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #EDEDED;
+}
+
+/* 2-Column fields layout for grids */
+.profile-grid-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 600px) {
+  .profile-grid-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.profile-static-label {
+  font-family: 'Inter', sans-serif;
+  color: #9CA3AF;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.profile-static-value {
+  color: #EDEDED;
+  font-size: 14px;
+  min-height: 20px;
+}
+
+.profile-static-value-empty {
+  color: #555555;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* Skills/Expertise Chips */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-chip {
+  background-color: #1A1A1A;
+  border: 1px solid #333333;
+  color: #9CA3AF;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  transition: border-color 0.2s ease, color 0.2s;
+}
+
+.tag-chip:hover {
+  border-color: #D97706; /* hover border amber */
+  color: #EDEDED;
+}
+
+.tag-chip-delete {
+  background: none;
+  border: none;
+  color: #EF4444;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.tag-chip-delete:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.add-tag-container {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  max-width: 300px;
+}
+
+/* Links Card specific styles */
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #9CA3AF;
+  font-size: 14px;
+}
+
+.link-icon {
+  color: #D97706;
+  flex-shrink: 0;
+}
+
+.link-anchor {
+  color: #D97706;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.link-anchor:hover {
+  text-decoration: underline;
+}
+
+/* Resume upload specific card elements */
+.resume-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+@media (min-width: 576px) {
+  .resume-card-body {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.resume-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.resume-icon {
+  color: #EF4444;
+}
+
+.resume-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resume-filename {
+  font-size: 14px;
+  font-weight: 500;
+  color: #EDEDED;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resume-size {
+  font-size: 11px;
+  color: #9CA3AF;
+}
+
+.resume-upload-btn-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.resume-file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Sticky Bottom Edit Control Bar */
+.edit-mode-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #212121;
+  border-top: 1px solid #333333;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  z-index: 100;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.edit-mode-bar-content {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.edit-mode-bar-status {
+  margin-right: auto;
+  align-self: center;
+  color: #D97706;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Padding offset so sticky bottom doesn't hide contents */
+.profile-padding-bottom {
+  padding-bottom: 80px;
+}
+
+/* Admin panel buttons styling */
+.admin-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 576px) {
+  .admin-actions-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+

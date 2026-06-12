@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import AuthPage from './components/AuthPage'
+import ProfilePage from './components/ProfilePage'
 import './App.css'
 
 function App() {
@@ -44,42 +45,7 @@ function App() {
   }
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-card">
-        <h2 className="dashboard-title">Welcome to Intervux</h2>
-        <p className="dashboard-welcome">You have successfully logged into the platform.</p>
-        
-        <div className="dashboard-info-section">
-          <div className="info-row">
-            <span className="info-label">Full Name</span>
-            <span className="info-value">{user.name}</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Email Address</span>
-            <span className="info-value">{user.email}</span>
-          </div>
-          {user.phone && (
-            <div className="info-row">
-              <span className="info-label">Phone</span>
-              <span className="info-value">{user.phone}</span>
-            </div>
-          )}
-          <div className="info-row">
-            <span className="info-label">Account Role</span>
-            <span className="info-value">
-              <span className="role-badge">{user.role}</span>
-            </span>
-          </div>
-        </div>
-
-        <button 
-          onClick={handleLogout} 
-          className="ui-button ui-button-outline"
-        >
-          Sign Out
-        </button>
-      </div>
-    </div>
+    <ProfilePage onLogout={handleLogout} />
   )
 }
 
