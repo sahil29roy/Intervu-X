@@ -4,6 +4,7 @@ import cors from "cors"
 import { ENV } from "./lib/env.js"
 import { connectDB } from "./lib/db.js"
 import authRoutes from "./routes/authRoutes.js"
+import interviewRoutes from "./routes/interviewRoutes.js"
 
 const app = new express()
 
@@ -21,6 +22,7 @@ app.use("/uploads", express.static("public/uploads"));
 
 // Route Definitions
 app.use("/api/auth", authRoutes);
+app.use("/api/interviews", interviewRoutes);
 
 app.get("/health", (req, res) => {
     res.status(200).json({ msg: "api is up and running" })
