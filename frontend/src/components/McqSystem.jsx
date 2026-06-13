@@ -40,9 +40,9 @@ const Icon = {
   )
 };
 
-// ============================================================================
+
 // CANDIDATE VIEW
-// ============================================================================
+
 export function MCQTestCandidateView({ user, navigateToDashboard }) {
   const [tests, setTests] = useState([]);
   const [attempts, setAttempts] = useState([]);
@@ -240,9 +240,7 @@ export function MCQTestCandidateView({ user, navigateToDashboard }) {
     );
   }
 
-  // ==========================================
   // ACTIVE TEST MODE UI
-  // ==========================================
   if (activeTest) {
     const currentQ = questions[currentIdx];
     const progressPercent = questions.length ? Math.round(((currentIdx + 1) / questions.length) * 100) : 0;
@@ -324,9 +322,7 @@ export function MCQTestCandidateView({ user, navigateToDashboard }) {
     );
   }
 
-  // ==========================================
   // REVIEW IMMEDIATE SUBMISSION RESULT UI
-  // ==========================================
   if (reviewResult) {
     const scorePct = reviewResult.attempt.totalQuestions
       ? Math.round((reviewResult.attempt.score / reviewResult.attempt.totalQuestions) * 100)
@@ -430,9 +426,7 @@ export function MCQTestCandidateView({ user, navigateToDashboard }) {
     );
   }
 
-  // ==========================================
   // REVIEW PAST TEST ATTEMPT UI
-  // ==========================================
   if (pastReviewTest) {
     const scorePct = pastReviewTest.testId?.totalMarks
       ? Math.round((pastReviewTest.score / pastReviewTest.testId.totalMarks) * 100)
@@ -520,9 +514,7 @@ export function MCQTestCandidateView({ user, navigateToDashboard }) {
     );
   }
 
-  // ==========================================
   // AVAILABLE TESTS LIST & PAST ATTEMPTS LIST
-  // ==========================================
   return (
     <div className="mcq-container">
       {errorMessage && (
@@ -643,9 +635,8 @@ export function MCQTestCandidateView({ user, navigateToDashboard }) {
   );
 }
 
-// ============================================================================
 // ADMIN VIEW
-// ============================================================================
+
 export function MCQTestAdminView({ user, navigateToDashboard }) {
   const [activeTab, setActiveTab] = useState("tests"); // "tests" | "attempts"
   const [tests, setTests] = useState([]);
@@ -837,9 +828,7 @@ export function MCQTestAdminView({ user, navigateToDashboard }) {
     );
   }
 
-  // ==========================================
   // MANAGE QUESTIONS DETAILS VIEW UI
-  // ==========================================
   if (manageQuestionsTest) {
     return (
       <div className="mcq-container">
@@ -1007,9 +996,7 @@ export function MCQTestAdminView({ user, navigateToDashboard }) {
     );
   }
 
-  // ==========================================
   // LIST VIEWS (TESTS / ATTEMPTS) UI
-  // ==========================================
   return (
     <div className="mcq-container">
       {errorMessage && (

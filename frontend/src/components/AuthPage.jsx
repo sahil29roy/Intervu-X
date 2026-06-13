@@ -320,6 +320,7 @@ export default function AuthPage({ onAuthSuccess }) {
                     <SelectContent>
                       <SelectItem value="candidate">Candidate</SelectItem>
                       <SelectItem value="interviewer">Interviewer</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -162,9 +162,7 @@ export default function Dashboard({ user, onLogout }) {
 
   return (
     <div className="dashboard-layout">
-      {/* ========================================== */}
       {/* SIDEBAR                                    */}
-      {/* ========================================== */}
       <aside className="dashboard-sidebar">
         <div className="dashboard-logo-container">
           <div className="dashboard-logo">
@@ -204,9 +202,7 @@ export default function Dashboard({ user, onLogout }) {
         </ul>
       </aside>
 
-      {/* ========================================== */}
       {/* MAIN DASHBOARD AREA                        */}
-      {/* ========================================== */}
       <div className="dashboard-main-area">
         {/* Top Navbar */}
         <header className="dashboard-top-navbar">
@@ -289,9 +285,9 @@ export default function Dashboard({ user, onLogout }) {
 
           {activeNav === "dashboard" && (
             <>
-              {/* ==================================================== */}
+
               {/* CANDIDATE MAIN CONTENT                               */}
-              {/* ==================================================== */}
+
               {user.role === "candidate" && (
                 <>
                   {/* Welcome Banner */}
@@ -487,9 +483,9 @@ export default function Dashboard({ user, onLogout }) {
                 </>
               )}
 
-              {/* ==================================================== */}
+
               {/* INTERVIEWER MAIN CONTENT                             */}
-              {/* ==================================================== */}
+
               {user.role === "interviewer" && (
                 <>
                   {/* Welcome Banner */}
@@ -668,9 +664,9 @@ export default function Dashboard({ user, onLogout }) {
                 </>
               )}
 
-              {/* ==================================================== */}
+
               {/* ADMIN MAIN CONTENT                                   */}
-              {/* ==================================================== */}
+
               {user.role === "admin" && (
                 <>
                   {/* Welcome Banner */}

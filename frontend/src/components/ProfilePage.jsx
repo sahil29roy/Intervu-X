@@ -980,7 +980,7 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
           </>
         )}
 
-        {/* ==================== INTERVIEWER VIEW ==================== */}
+        {/*  INTERVIEWER VIEW  */}
         {user.role === "interviewer" && (
           <>
             {/* About Card */}
