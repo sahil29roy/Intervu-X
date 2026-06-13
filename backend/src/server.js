@@ -26,14 +26,15 @@ app.get("/books", (req, res) => {
     res.status(200).json({ msg: "this is books endpoint" })
 })
 
+//use when deploy frontend and backend in same server but as i have deployed in render (backend) and vercel (frontend) so this will give error
 
-if (ENV.NODE_ENV === "production") {
-    app.use(express.static(path.join(__dirname, "../frontend/dist")))
+// if (ENV.NODE_ENV === "production") {
+//     app.use(express.static(path.join(__dirname, "../frontend/dist")))
 
-    app.get("/{*any}", (req, res) => {
-        res.sendFile(path.join(__dirname, "../frontend/dist", "dist", "index.js"))
-    })
-}
+//     app.get("/{*any}", (req, res) => {
+//         res.sendFile(path.join(__dirname, "../frontend/dist", "dist", "index.js"))
+//     })
+// }
 
 
 
