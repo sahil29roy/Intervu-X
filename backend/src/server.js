@@ -5,6 +5,7 @@ import { ENV } from "./lib/env.js"
 import { connectDB } from "./lib/db.js"
 import authRoutes from "./routes/authRoutes.js"
 import interviewRoutes from "./routes/interviewRoutes.js"
+import testRoutes from "./routes/testRoutes.js"
 
 const app = new express()
 
@@ -23,6 +24,7 @@ app.use("/uploads", express.static("public/uploads"));
 // Route Definitions
 app.use("/api/auth", authRoutes);
 app.use("/api/interviews", interviewRoutes);
+app.use("/api/tests", testRoutes);
 
 app.get("/health", (req, res) => {
     res.status(200).json({ msg: "api is up and running" })

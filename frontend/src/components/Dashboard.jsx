@@ -8,6 +8,7 @@ import { Separator } from "./ui/separator"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "./ui/table"
 import { Progress } from "./ui/progress"
 import ProfilePage from "./ProfilePage"
+import { MCQTestCandidateView, MCQTestAdminView } from "./McqSystem"
 
 export default function Dashboard({ user, onLogout }) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -150,6 +151,7 @@ export default function Dashboard({ user, onLogout }) {
       { id: "dashboard", label: "Dashboard", icon: <Icon.Dashboard /> },
       { id: "users", label: "Users Management", icon: <Icon.Users /> },
       { id: "problems", label: "Problems Bank", icon: <Icon.Coding /> },
+      { id: "tests_admin", label: "MCQ Tests", icon: <Icon.Tests /> },
       { id: "interviews_list", label: "Interviews List", icon: <Icon.Interviews /> },
       { id: "profile", label: "Profile", icon: <Icon.Profile /> },
       { id: "settings", label: "Settings", icon: <Icon.Settings /> }
@@ -251,7 +253,21 @@ export default function Dashboard({ user, onLogout }) {
             />
           )}
 
-          {activeNav !== "dashboard" && activeNav !== "profile" && (
+          {activeNav === "tests" && (
+            <MCQTestCandidateView
+              user={user}
+              navigateToDashboard={() => setActiveNav("dashboard")}
+            />
+          )}
+
+          {activeNav === "tests_admin" && (
+            <MCQTestAdminView
+              user={user}
+              navigateToDashboard={() => setActiveNav("dashboard")}
+            />
+          )}
+
+          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && (
             <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
               <CardHeader>
                 <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>

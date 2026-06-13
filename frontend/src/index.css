@@ -1480,4 +1480,249 @@ body {
   color: #9CA3AF;
 }
 
+/* ==========================================
+   MCQ Assignment System Styles
+   ========================================== */
+
+/* MCQ layout container */
+.mcq-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* MCQ Test grid */
+.mcq-test-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+/* Active MCQ Session Header */
+.mcq-session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1A1A1A;
+  border: 1px solid #333333;
+  padding: 16px 24px;
+  border-radius: 12px;
+}
+
+.mcq-timer {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: #262626;
+  border-radius: 6px;
+  border: 1px solid #444444;
+  color: #D97706;
+  transition: all 0.2s ease;
+}
+
+.mcq-timer.warning {
+  color: #FBBF24;
+  border-color: #FBBF24;
+  background-color: rgba(251, 191, 36, 0.1);
+}
+
+.mcq-timer.danger {
+  color: #EF4444;
+  border-color: #EF4444;
+  background-color: rgba(239, 68, 68, 0.1);
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+
+/* Choice Cards */
+.choice-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.choice-card {
+  background-color: #1A1A1A;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  text-align: left;
+  width: 100%;
+}
+
+.choice-card:hover {
+  border-color: #444444;
+  background-color: #212121;
+}
+
+.choice-card.selected {
+  border-color: #D97706;
+  background-color: rgba(217, 119, 6, 0.08);
+}
+
+.choice-indicator {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #555555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9CA3AF;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.choice-card.selected .choice-indicator {
+  border-color: #D97706;
+  background-color: #D97706;
+  color: #171717;
+}
+
+.choice-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #EDEDED;
+}
+
+/* MCQ Navigation Footer */
+.mcq-nav-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+}
+
+/* Result Circular Badge */
+.result-score-ring-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-score-badge {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 8px solid #333333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  background-color: #1A1A1A;
+}
+
+.result-score-badge.passed {
+  border-color: #10B981;
+  color: #10B981;
+}
+
+.result-score-badge.failed {
+  border-color: #EF4444;
+  color: #EF4444;
+}
+
+/* MCQ Question Review list */
+.review-question-item {
+  border-bottom: 1px solid #333333;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.review-question-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.review-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+@media (min-width: 768px) {
+  .review-options {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.review-option-card {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #2A2A2A;
+  font-size: 13px;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #1A1A1A;
+}
+
+.review-option-card.correct {
+  border-color: rgba(16, 185, 129, 0.4);
+  background-color: rgba(16, 185, 129, 0.08);
+  color: #10B981;
+}
+
+.review-option-card.incorrect {
+  border-color: rgba(239, 68, 68, 0.4);
+  background-color: rgba(239, 68, 68, 0.08);
+  color: #EF4444;
+}
+
+.review-option-card.selected {
+  font-weight: 500;
+}
+
+/* Subject/Category tags */
+.meta-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background-color: #2A2A2A;
+  color: #EDEDED;
+  font-weight: 500;
+}
+
+.meta-tag.difficulty-easy { color: #10B981; background-color: rgba(16, 185, 129, 0.1); }
+.meta-tag.difficulty-medium { color: #F59E0B; background-color: rgba(245, 158, 11, 0.1); }
+.meta-tag.difficulty-hard { color: #EF4444; background-color: rgba(239, 68, 68, 0.1); }
+
+/* MCQ Creator Form Grid */
+.mcq-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .mcq-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
 
