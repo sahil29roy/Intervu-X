@@ -9,7 +9,7 @@ import { Label } from "./ui/label"
 import { Separator } from "./ui/separator"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select"
 
-export default function ProfilePage({ onLogout }) {
+export default function ProfilePage({ onLogout, navigateToDashboard }) {
   const [user, setUser] = useState(null)
   const [isInitializing, setIsInitializing] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
@@ -224,7 +224,7 @@ export default function ProfilePage({ onLogout }) {
     setIsSaving(true)
     try {
       const token = localStorage.getItem("intervux_token")
-      
+
       // Prep body fields, convert numbers where appropriate
       const bodyData = {
         name: draft.name,
@@ -398,12 +398,12 @@ export default function ProfilePage({ onLogout }) {
 
   return (
     <div className={`profile-container ${isEditing ? "profile-padding-bottom" : ""}`}>
-      
-      {/* ========================================== */}
+
+
       {/* LEFT COLUMN: Sticky Sidebar & Stats        */}
-      {/* ========================================== */}
+
       <div className="profile-sidebar">
-        
+
         {/* Profile Card */}
         <div className="profile-sidebar-card">
           {/* Avatar Upload Hover Overlay */}
@@ -422,17 +422,17 @@ export default function ProfilePage({ onLogout }) {
                 </svg>
               )}
             </div>
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="avatar-file-input" 
+            <input
+              type="file"
+              accept="image/*"
+              className="avatar-file-input"
               onChange={handleAvatarUpload}
               disabled={uploadLoading}
             />
           </div>
 
           <h2 className="profile-sidebar-name">{user.name}</h2>
-          
+
           <Badge variant={getBadgeVariant(user.role)}>
             {user.role}
           </Badge>
@@ -457,23 +457,23 @@ export default function ProfilePage({ onLogout }) {
         {/* Dynamic Activity Stats Card */}
         <div className="profile-stats-card">
           <h3 className="profile-stats-title">Platform Stats</h3>
-          
+
           {user.role === "candidate" && (
             <div className="stats-grid">
               <div className="stat-item">
-                <span className="stat-value">142</span>
+                <span className="stat-value">0</span>
                 <span className="stat-label">Solved</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">320</span>
+                <span className="stat-value">0</span>
                 <span className="stat-label">Submissions</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">68%</span>
+                <span className="stat-value">0%</span>
                 <span className="stat-label">Acceptance</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">12 🔥</span>
+                <span className="stat-value">0 🔥</span>
                 <span className="stat-label">Streak</span>
               </div>
             </div>
@@ -482,15 +482,15 @@ export default function ProfilePage({ onLogout }) {
           {user.role === "interviewer" && (
             <div className="stats-grid stats-grid-full">
               <div className="stat-item">
-                <span className="stat-value">28</span>
+                <span className="stat-value">0</span>
                 <span className="stat-label">Interviews Conducted</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">8</span>
+                <span className="stat-value">0</span>
                 <span className="stat-label">Problems Created</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">4.9 ⭐</span>
+                <span className="stat-value">0.0 ⭐</span>
                 <span className="stat-label">Avg rating</span>
               </div>
             </div>
@@ -499,31 +499,33 @@ export default function ProfilePage({ onLogout }) {
           {user.role === "admin" && (
             <div className="stats-grid stats-grid-full">
               <div className="stat-item">
-                <span className="stat-value">1,240</span>
+                <span className="stat-value">0</span>
                 <span className="stat-label">Total Users</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">86</span>
+                <span className="stat-value">0</span>
                 <span className="stat-label">Total Problems</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">3 ⚠️</span>
+                <span className="stat-value">0 ⚠️</span>
                 <span className="stat-label">Pending reports</span>
               </div>
             </div>
           )}
         </div>
 
+        <Button onClick={navigateToDashboard} variant="default" style={{ marginBottom: "8px" }}>
+          Back to Dashboard
+        </Button>
         <Button onClick={onLogout} variant="outline" style={{ borderColor: "rgba(239, 68, 68, 0.4)", color: "#EF4444" }}>
           Log Out
         </Button>
       </div>
 
-      {/* ========================================== */}
       {/* RIGHT COLUMN: Role-specific Content        */}
-      {/* ========================================== */}
+
       <div className="profile-main-content">
-        
+
         {/* ==================== CANDIDATE VIEW ==================== */}
         {user.role === "candidate" && (
           <>
@@ -532,7 +534,7 @@ export default function ProfilePage({ onLogout }) {
               <div className="profile-section-header">
                 <h3 className="profile-section-title">About Me</h3>
               </div>
-              
+
               <div className="profile-grid-fields">
                 {isEditing ? (
                   <>
@@ -694,10 +696,10 @@ export default function ProfilePage({ onLogout }) {
                         }
                       }}
                     />
-                    <Button 
-                      type="button" 
-                      onClick={addSkill} 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      onClick={addSkill}
+                      variant="outline"
                       style={{ width: "auto" }}
                     >
                       Add
@@ -811,7 +813,7 @@ export default function ProfilePage({ onLogout }) {
                     <div>
                       <h4 className="profile-static-label">Degree & Branch</h4>
                       <p className={user.education?.degree ? "profile-static-value" : "profile-static-value-empty"}>
-                        {user.education?.degree 
+                        {user.education?.degree
                           ? `${user.education.degree}${user.education.branch ? ` in ${user.education.branch}` : ""}`
                           : "Not specified"}
                       </p>
@@ -827,7 +829,7 @@ export default function ProfilePage({ onLogout }) {
                     <div>
                       <h4 className="profile-static-label">Years of Study</h4>
                       <p className={user.education?.startYear ? "profile-static-value" : "profile-static-value-empty"}>
-                        {user.education?.startYear 
+                        {user.education?.startYear
                           ? `${user.education.startYear} – ${user.education.endYear || "Present"}`
                           : "Not specified"}
                       </p>
@@ -936,14 +938,14 @@ export default function ProfilePage({ onLogout }) {
                   <svg className="resume-icon" width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  
+
                   <div className="resume-info">
                     {user.resumeUrl ? (
                       <>
-                        <a 
-                          href={user.resumeUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
+                        <a
+                          href={user.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="resume-filename"
                           title={getResumeFilename(user.resumeUrl)}
                         >
@@ -964,10 +966,10 @@ export default function ProfilePage({ onLogout }) {
                   <Button variant="outline" disabled={resumeLoading} style={{ position: "relative" }}>
                     {resumeLoading && <div className="spinner"></div>}
                     {user.resumeUrl ? "Replace Resume" : "Upload Resume"}
-                    <input 
-                      type="file" 
-                      accept=".pdf,.doc,.docx" 
-                      className="resume-file-input" 
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="resume-file-input"
                       onChange={handleResumeUpload}
                       disabled={resumeLoading}
                     />
@@ -1081,8 +1083,8 @@ export default function ProfilePage({ onLogout }) {
                     <div style={{ gridColumn: "span 2" }}>
                       <h4 className="profile-static-label">Years of Experience</h4>
                       <p className={user.yearsOfExperience !== null && user.yearsOfExperience !== undefined ? "profile-static-value" : "profile-static-value-empty"}>
-                        {user.yearsOfExperience !== null && user.yearsOfExperience !== undefined 
-                          ? `${user.yearsOfExperience} years` 
+                        {user.yearsOfExperience !== null && user.yearsOfExperience !== undefined
+                          ? `${user.yearsOfExperience} years`
                           : "Not specified"}
                       </p>
                     </div>
@@ -1136,10 +1138,10 @@ export default function ProfilePage({ onLogout }) {
                         }
                       }}
                     />
-                    <Button 
-                      type="button" 
-                      onClick={addExpertise} 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      onClick={addExpertise}
+                      variant="outline"
                       style={{ width: "auto" }}
                     >
                       Add
@@ -1323,8 +1325,8 @@ export default function ProfilePage({ onLogout }) {
                 <Button variant="outline" onClick={() => alert("Loading Audit logs...")}>
                   View Activity Logs
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   style={{ borderColor: "rgba(245, 158, 11, 0.4)", color: "#F59E0B" }}
                   onClick={() => alert("No reports outstanding")}
                 >

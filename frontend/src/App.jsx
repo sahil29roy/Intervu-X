@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import AuthPage from './components/AuthPage'
 import ProfilePage from './components/ProfilePage'
+import Dashboard from './components/Dashboard'
 import './App.css'
 
 function App() {
   const [user, setUser] = useState(null)
   const [isInitializing, setIsInitializing] = useState(true)
+  const [currentPage, setCurrentPage] = useState('dashboard')
 
   useEffect(() => {
     // Check if user is logged in
@@ -24,12 +26,14 @@ function App() {
 
   const handleAuthSuccess = (userData) => {
     setUser(userData)
+    setCurrentPage('dashboard')
   }
 
   const handleLogout = () => {
     localStorage.removeItem("intervux_user")
     localStorage.removeItem("intervux_token")
     setUser(null)
+    setCurrentPage('dashboard')
   }
 
   if (isInitializing) {
@@ -45,7 +49,10 @@ function App() {
   }
 
   return (
-    <ProfilePage onLogout={handleLogout} />
+    <Dashboard
+      user={user}
+      onLogout={handleLogout}
+    />
   )
 }
 
