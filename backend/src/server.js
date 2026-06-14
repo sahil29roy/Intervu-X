@@ -6,6 +6,7 @@ import { connectDB } from "./lib/db.js"
 import authRoutes from "./routes/authRoutes.js"
 import interviewRoutes from "./routes/interviewRoutes.js"
 import testRoutes from "./routes/testRoutes.js"
+import codingRoutes from "./routes/codingRoutes.js"
 
 const app = new express()
 
@@ -25,6 +26,7 @@ app.use("/uploads", express.static("public/uploads"));
 app.use("/api/auth", authRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/tests", testRoutes);
+app.use("/api/coding", codingRoutes);
 
 app.get("/health", (req, res) => {
     res.status(200).json({ msg: "api is up and running" })
