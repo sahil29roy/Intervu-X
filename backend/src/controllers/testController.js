@@ -143,7 +143,6 @@ export const getTestById = async (req, res) => {
 
         let questions;
         if (req.user.role === "admin") {
-            // Admin gets all fields
             questions = await Question.find({ testId });
         } else {
             // Check if candidate has already attempted this test
