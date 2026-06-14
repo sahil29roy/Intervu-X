@@ -9,6 +9,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from ".
 import { Progress } from "./ui/progress"
 import ProfilePage from "./ProfilePage"
 import { MCQTestCandidateView, MCQTestAdminView } from "./McqSystem"
+import CodingSandbox from "./CodingSandbox"
 
 export default function Dashboard({ user, onLogout }) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -263,7 +264,14 @@ export default function Dashboard({ user, onLogout }) {
             />
           )}
 
-          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && (
+          {activeNav === "sandbox" && (
+            <CodingSandbox
+              user={user}
+              navigateToDashboard={() => setActiveNav("dashboard")}
+            />
+          )}
+
+          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && (
             <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
               <CardHeader>
                 <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>
