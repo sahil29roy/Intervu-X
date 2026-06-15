@@ -439,6 +439,20 @@ export default function Dashboard({ user, onLogout }) {
                           <CardDescription>Get ready for your live coding round.</CardDescription>
                         </CardHeader>
                         <CardContent>
+                          <div className="card-list" style={{ marginBottom: "16px" }}>
+                            <div className="card-list-item" style={{ backgroundColor: "rgba(217, 119, 6, 0.05)", border: "1px dashed #D97706", padding: "12px", cursor: "pointer" }} onClick={() => handleNavClick("demo_interview")}>
+                              <div className="item-left-info">
+                                <span className="item-icon" style={{ color: "#D97706" }}>
+                                  <Icon.Interviews />
+                                </span>
+                                <div className="item-text-container">
+                                  <span className="item-title" style={{ fontSize: "16px", color: "#D97706" }}>Demo Interview Session</span>
+                                  <span className="item-subtitle">Available all the time for practice</span>
+                                </div>
+                              </div>
+                              <Badge variant="amber">Demo</Badge>
+                            </div>
+                          </div>
                           {nextInterview ? (
                             <div className="card-list-item" style={{ backgroundColor: "transparent", border: "none", padding: 0 }}>
                               <div className="item-left-info">
@@ -615,6 +629,19 @@ export default function Dashboard({ user, onLogout }) {
                         </CardHeader>
                         <CardContent>
                           <div className="card-list">
+                            <div className="card-list-item" style={{ backgroundColor: "rgba(217, 119, 6, 0.05)", border: "1px dashed #D97706", padding: "12px", cursor: "pointer" }} onClick={() => handleNavClick("demo_interview")}>
+                              <div className="item-left-info">
+                                <span className="item-icon" style={{ color: "#D97706" }}>
+                                  <Icon.Interviews />
+                                </span>
+                                <div className="item-text-container">
+                                  <span className="item-title" style={{ fontSize: "16px", color: "#D97706" }}>Demo Interview Session</span>
+                                  <span className="item-subtitle">Available all the time for practice</span>
+                                </div>
+                              </div>
+                              <Badge variant="amber">Demo</Badge>
+                            </div>
+                            
                             <div className="card-list-item">
                               <div className="item-left-info">
                                 <span className="item-icon">
