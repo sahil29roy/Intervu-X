@@ -11,6 +11,7 @@ import ProfilePage from "./ProfilePage"
 import { MCQTestCandidateView, MCQTestAdminView } from "./McqSystem"
 import CodingSandbox from "./CodingSandbox"
 import LocalIDE from "./LocalIDE"
+import DemoInterview from "./DemoInterview"
 
 export default function Dashboard({ user, onLogout }) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -182,7 +183,8 @@ export default function Dashboard({ user, onLogout }) {
       { id: "tests", label: "Tests", icon: <Icon.Tests /> },
       { id: "sandbox", label: "Coding Sandbox", icon: <Icon.Coding /> },
       { id: "local_ide", label: "Local IDE", icon: <Icon.CodeCircle /> },
-      { id: "interviews", label: "Interviews", icon: <Icon.Interviews /> }
+      { id: "interviews", label: "Interviews", icon: <Icon.Interviews /> },
+      { id: "demo_interview", label: "Demo Interview", icon: <Icon.Interviews /> }
     ],
     interviewer: [
       { id: "dashboard", label: "Dashboard", icon: <Icon.Dashboard /> },
@@ -190,7 +192,8 @@ export default function Dashboard({ user, onLogout }) {
       { id: "candidates", label: "Candidates", icon: <Icon.Users /> },
       { id: "problems", label: "Problems Bank", icon: <Icon.Coding /> },
       { id: "local_ide", label: "Local IDE", icon: <Icon.CodeCircle /> },
-      { id: "live", label: "Live Interviews", icon: <Icon.Interviews /> }
+      { id: "live", label: "Live Interviews", icon: <Icon.Interviews /> },
+      { id: "demo_interview", label: "Demo Interview", icon: <Icon.Interviews /> }
     ],
     admin: [
       { id: "dashboard", label: "Dashboard", icon: <Icon.Dashboard /> },
@@ -199,6 +202,7 @@ export default function Dashboard({ user, onLogout }) {
       { id: "local_ide", label: "Local IDE", icon: <Icon.CodeCircle /> },
       { id: "tests_admin", label: "MCQ Tests", icon: <Icon.Tests /> },
       { id: "interviews_list", label: "Interviews List", icon: <Icon.Interviews /> },
+      { id: "demo_interview", label: "Demo Interview", icon: <Icon.Interviews /> },
       { id: "profile", label: "Profile", icon: <Icon.Profile /> },
       { id: "settings", label: "Settings", icon: <Icon.Settings /> }
     ]
@@ -336,7 +340,14 @@ export default function Dashboard({ user, onLogout }) {
             />
           )}
 
-          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && (
+          {activeNav === "demo_interview" && (
+            <DemoInterview
+              user={user}
+              navigateToDashboard={() => setActiveNav("dashboard")}
+            />
+          )}
+
+          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && (
             <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
               <CardHeader>
                 <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>
