@@ -25,6 +25,11 @@ const Icon = {
       <path d="M8 5v14l11-7z" />
     </svg>
   ),
+  Refresh: () => (
+    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-5.6 5.6" />
+    </svg>
+  ),
   Terminal: () => (
     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{ marginRight: "6px" }}>
       <polyline points="4 17 10 11 4 5" />
@@ -371,6 +376,13 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                       <option value="javascript">JavaScript (Node.js)</option>
                     </select>
                   </div>
+                  <button
+                    className="reset-editor-btn"
+                    onClick={() => setEditorCode(MOCK_CODING_QUESTION.starterCode)}
+                    title="Reset code to boilerplate"
+                  >
+                    <Icon.Refresh />
+                  </button>
                 </div>
                 <Button variant="default" className="run-btn" onClick={handleRunCode} disabled={isRunning}>
                   <Icon.Play /> {isRunning ? "Running..." : "Run Code"}
