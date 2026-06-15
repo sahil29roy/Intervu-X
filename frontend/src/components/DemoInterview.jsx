@@ -87,14 +87,14 @@ export default function DemoInterview({ user, navigateToDashboard }) {
       if (res.ok) {
         let resultText = "";
         if (data.result.error) {
-          resultText += \`Error:\n\${data.result.error}\n\`;
+          resultText += `Error:\n${data.result.error}\n`;
         } else {
-          resultText += \`\${data.result.output}\n\`;
+          resultText += `${data.result.output}\n`;
         }
-        resultText += \`\n[Execution completed in \${data.result.executionTimeMs}ms]\`;
+        resultText += `\n[Execution completed in ${data.result.executionTimeMs}ms]`;
         setOutput(resultText);
       } else {
-        setOutput(\`Error: \${data.message || "Execution failed"}\`);
+        setOutput(`Error: ${data.message || "Execution failed"}`);
       }
     } catch (err) {
       setOutput("Error: Failed to connect to execution server.");
