@@ -347,7 +347,32 @@ export default function Dashboard({ user, onLogout }) {
             />
           )}
 
-          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && (
+          {activeNav === "interviews" && (
+            <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
+              <CardHeader>
+                <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>
+                  Interviews
+                </CardTitle>
+                <CardDescription>This section is currently under active development.</CardDescription>
+              </CardHeader>
+              <CardContent style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", marginTop: "16px" }}>
+                <p style={{ color: "#9CA3AF" }}>
+                  You are viewing the Interviews page. The full live interview scheduling and management system is coming soon. 
+                  In the meantime, you can explore the fully functional <strong>Demo Interview</strong> environment!
+                </p>
+                <div style={{ display: "flex", gap: "16px" }}>
+                  <Button variant="outline" onClick={() => setActiveNav("dashboard")} style={{ width: "auto" }}>
+                    Back to Dashboard
+                  </Button>
+                  <Button onClick={() => setActiveNav("demo_interview")} style={{ width: "auto" }}>
+                    Launch Demo Interview
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && activeNav !== "interviews" && (
             <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
               <CardHeader>
                 <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>

@@ -301,7 +301,12 @@ export default function DemoInterview({ user, navigateToDashboard }) {
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "32px", overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", paddingBottom: "16px", borderBottom: "1px solid #262626" }}>
                 <h3 style={{ fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif" }}>Conceptual Questions</h3>
-                <Button variant="outline" onClick={() => setActiveSection(null)}>Back to Sections</Button>
+                <div style={{ display: "flex", gap: "16px" }}>
+                  <Button variant="outline" onClick={() => setActiveSection(null)}>Back to Sections</Button>
+                  <Button variant="default" onClick={() => setActiveSection("coding")} style={{ backgroundColor: "#D97706", color: "#171717", borderColor: "#D97706" }}>
+                    Go to Coding →
+                  </Button>
+                </div>
               </div>
 
               <Card style={{ backgroundColor: "#1e1e1e", border: "1px solid #333" }}>
@@ -314,7 +319,10 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                   {MOCK_MCQ_QUESTION.options.map(opt => (
                     <div 
                       key={opt.id}
-                      onClick={() => setSelectedMcqOption(opt.id)}
+                      onClick={() => {
+                        setSelectedMcqOption(opt.id);
+                        setMcqFeedback(null);
+                      }}
                       style={{ 
                         padding: "16px", 
                         backgroundColor: selectedMcqOption === opt.id ? "rgba(217, 119, 6, 0.15)" : "#262626", 
@@ -340,22 +348,20 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                   ))}
                   
                   <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "16px" }}>
-                    {mcqFeedback && (
+                    {mcqFeedback === "submitted" && (
                       <span style={{ 
-                        color: mcqFeedback === "correct" ? "#22C55E" : "#EF4444", 
+                        color: "#22C55E", 
                         fontWeight: 500,
                         fontSize: "14px"
                       }}>
-                        {mcqFeedback === "correct" ? "Correct Answer! Great job." : "Incorrect Answer. Try again."}
+                        Answer recorded successfully!
                       </span>
                     )}
                     <Button 
-                      onClick={() => {
-                        setMcqFeedback(selectedMcqOption === MOCK_MCQ_QUESTION.correctAnswer ? "correct" : "incorrect");
-                      }}
-                      disabled={!selectedMcqOption}
+                      onClick={() => setMcqFeedback("submitted")}
+                      disabled={!selectedMcqOption || mcqFeedback === "submitted"}
                     >
-                      Submit Answer
+                      {mcqFeedback === "submitted" ? "Submitted" : "Submit Answer"}
                     </Button>
                   </div>
                 </CardContent>
@@ -384,9 +390,14 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                     <Icon.Refresh />
                   </button>
                 </div>
-                <Button variant="default" className="run-btn" onClick={handleRunCode} disabled={isRunning}>
-                  <Icon.Play /> {isRunning ? "Running..." : "Run Code"}
-                </Button>
+                <div style={{ display: "flex", gap: "16px" }}>
+                  <Button variant="outline" onClick={() => setActiveSection("mcq")} style={{ color: "#D97706", borderColor: "#D97706" }}>
+                    Go to MCQ →
+                  </Button>
+                  <Button variant="default" className="run-btn" onClick={handleRunCode} disabled={isRunning}>
+                    <Icon.Play /> {isRunning ? "Running..." : "Run Code"}
+                  </Button>
+                </div>
               </div>
               
               <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
