@@ -89,6 +89,20 @@ Example output format:
       { input: "Deoghar", output: "rahgoeD" }
     ],
     tags: ["String", "Basic"]
+  },
+  {
+    title: "Longest Substring Without Repeating Characters",
+    description: "Given a string s read from standard input, find the length of the longest substring without repeating characters.\n\nA substring is a contiguous sequence of characters.",
+    difficulty: "medium",
+    constraints: "1 <= s.length <= 10^5\ns consists of English letters, digits, symbols and spaces.",
+    sampleInput: "abcabcbb",
+    sampleOutput: "3",
+    hiddenTestCases: [
+      { input: "abcabcbb", output: "3" },
+      { input: "pwwkew", output: "3" },
+      { input: "dvdf", output: "3" }
+    ],
+    tags: ["String", "Sliding Window", "Hashing"]
   }
 ];
 
