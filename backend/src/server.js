@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js"
 import interviewRoutes from "./routes/interviewRoutes.js"
 import testRoutes from "./routes/testRoutes.js"
 import codingRoutes from "./routes/codingRoutes.js"
+import { redis } from "./lib/redis.js"
 
 const app = new express()
 

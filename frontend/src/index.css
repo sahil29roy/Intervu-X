@@ -40,10 +40,14 @@ body {
   background-color: #171717;
 }
 
-/* Custom Card Styling */
+/* Limit card width inside authentication/profile error layouts */
+.auth-page-container .ui-card {
+  max-width: 400px;
+}
+
+/* Custom Card Styling - adapts to parent wrapper width */
 .ui-card {
   width: 100%;
-  max-width: 400px;
   background-color: #212121;
   border: 1px solid #333333;
   border-radius: 12px; /* rounded-xl */
@@ -1484,11 +1488,14 @@ body {
    MCQ Assignment System Styles
    ========================================== */
 
-/* MCQ layout container */
+/* MCQ layout container - centered with a wider, premium desktop layout */
 .mcq-container {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 /* MCQ Test grid */
