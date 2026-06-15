@@ -131,6 +131,9 @@ async function runTests() {
         console.log("Verdict:", correctResult.submission?.verdict);
         console.log("Score:", correctResult.submission?.score);
         console.log("Passed Count:", correctResult.passedCount, "/", correctResult.totalCount);
+        if (correctResult.submission?.verdict !== "Accepted") {
+            console.error("Test 4 Failed Details:", JSON.stringify(correctResult.failedTestCaseDetails, null, 2));
+        }
 
         if (correctResult.submission?.verdict !== "Accepted" || correctResult.submission?.score !== 100) {
             throw new Error(`Expected Accepted with 100 score, got: ${correctResult.submission?.verdict} (${correctResult.submission?.score})`);

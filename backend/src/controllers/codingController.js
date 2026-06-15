@@ -2,6 +2,7 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import CodingQuestion from "../models/CodingQuestion.js";
 import CodingSubmission from "../models/CodingSubmission.js";
+import { executeCode } from "../services/codeExecution/executeCode.js";
 
 // Zod schemas
 const createQuestionSchema = z.object({
@@ -186,28 +187,9 @@ export const submitCodingAttempt = async (req, res) => {
 
         for (let i = 0; i < testCases.length; i++) {
             const tc = testCases[i];
-            // TODO: Replace this mock block with actual dockerized code execution.
-            let result;
-            if (sourceCode.includes("while") && (sourceCode.includes("true") || sourceCode.includes("1"))) {
-                result = {
-                    success: false,
-                    verdict: "Time Limit Exceeded",
-                    error: "Script execution timed out after 2000ms",
-                    output: ""
-                };
-            } else if (sourceCode.includes("a - b") || sourceCode.includes("-")) {
-                result = {
-                    success: true,
-                    output: "-1",
-                    executionTimeMs: 5
-                };
-            } else {
-                result = {
-                    success: true,
-                    output: tc.output,
-                    executionTimeMs: 10
-                };
-            }
+            
+            // Execute the code using our execution service
+            const result = await executeCode(language, sourceCode, tc.input);
 
             if (!result.success) {
                 finalVerdict = result.verdict;

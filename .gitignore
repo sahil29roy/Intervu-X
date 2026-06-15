@@ -133,3 +133,6 @@ bower_components
 psd
 thumb
 sketch
+
+# Code Execution temp folder
+backend/temp/

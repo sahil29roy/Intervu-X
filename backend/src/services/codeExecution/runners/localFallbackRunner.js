@@ -2,10 +2,7 @@ import fs from "fs";
 import path from "path";
 import { spawn } from "child_process";
 
-/**
- * Runner for JavaScript solutions inside sandbox environment using Docker.
- */
-export const runJavaScript = async (sourceCode, inputCase) => {
+export const runLocalFallback = async (sourceCode, inputCase) => {
   const runId = Math.random().toString(36).substring(2, 15);
   const tempDir = path.resolve("temp");
   
@@ -38,19 +35,9 @@ await import('./solution_${runId}.mjs');
   const startTime = Date.now();
 
   return new Promise((resolve) => {
-    // Spawn docker process with strict limits
-    const child = spawn("docker", [
-      "run",
-      "--rm",
-      "-i",
-      "--network", "none",
-      "--memory", "256m",
-      "--cpus", "0.5",
-      "-v", `${tempDir}:/app`,
-      "-w", "/app",
-      "intervux-nodejs",
-      "node", `wrapper_${runId}.mjs`
-    ], {
+    // Spawn Node process
+    const child = spawn("node", [wrapperPath], {
+      cwd: tempDir,
       stdio: ["pipe", "pipe", "pipe"]
     });
 
@@ -58,11 +45,11 @@ await import('./solution_${runId}.mjs');
     let stderrData = "";
     let isTimeout = false;
 
-    // Set timeout limit (10000ms for Docker container startup headroom)
+    // Set timeout limit (2000ms)
     const timeout = setTimeout(() => {
       isTimeout = true;
       child.kill("SIGKILL");
-    }, 10000);
+    }, 2000);
 
     // Pipe input case to stdin
     child.stdin.write(inputCase);
@@ -85,7 +72,7 @@ await import('./solution_${runId}.mjs');
         if (fs.existsSync(solutionPath)) fs.unlinkSync(solutionPath);
         if (fs.existsSync(wrapperPath)) fs.unlinkSync(wrapperPath);
       } catch (err) {
-        console.error("Cleanup error in JS runner:", err.message);
+        console.error("Cleanup error in local runner:", err.message);
       }
 
       if (isTimeout) {
