@@ -9,7 +9,8 @@ import {
     submitCodingAttempt,
     getMyCodingSubmissions,
     getAllCodingSubmissions,
-    runGeneralCode
+    runGeneralCode,
+    runTestsAttempt
 } from "../controllers/codingController.js";
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.post("/run", protectRoute, runGeneralCode);
 
 // Candidate only
 router.post("/questions/:id/submit", protectRoute, authorizeRoles("candidate"), submitCodingAttempt);
+router.post("/questions/:id/run-tests", protectRoute, authorizeRoles("candidate"), runTestsAttempt);
 router.get("/submissions/my", protectRoute, authorizeRoles("candidate"), getMyCodingSubmissions);
 
 // Admin only

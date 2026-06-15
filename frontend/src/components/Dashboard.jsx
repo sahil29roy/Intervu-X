@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
@@ -15,6 +15,47 @@ import LocalIDE from "./LocalIDE"
 export default function Dashboard({ user, onLogout }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeNav, setActiveNav] = useState("dashboard")
+
+  const [dashboardData, setDashboardData] = useState({
+    interviews: [],
+    testAttempts: [],
+    codingSubmissions: []
+  })
+  const [loadingDashboard, setLoadingDashboard] = useState(false)
+
+  useEffect(() => {
+    if (user.role === "candidate" && activeNav === "dashboard") {
+      fetchDashboardData()
+    }
+  }, [user.role, activeNav])
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoadingDashboard(true)
+      const token = localStorage.getItem("intervux_token")
+      
+      const [interviewsRes, testsRes, codingRes] = await Promise.all([
+        fetch("/api/interviews/my", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/tests/my-attempts", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/coding/submissions/my", { headers: { Authorization: `Bearer ${token}` } })
+      ])
+
+      const interviewsData = interviewsRes.ok ? await interviewsRes.json() : { interviews: [] }
+      const testsData = testsRes.ok ? await testsRes.json() : { attempts: [] }
+      const codingData = codingRes.ok ? await codingRes.json() : { submissions: [] }
+
+      setDashboardData({
+        interviews: interviewsData.interviews || [],
+        testAttempts: testsData.attempts || [],
+        codingSubmissions: codingData.submissions || []
+      })
+    } catch (err) {
+      console.error("Failed to load dashboard data", err)
+    } finally {
+      setLoadingDashboard(false)
+    }
+  }
+
 
   const handleNavClick = (tabId) => {
     setActiveNav(tabId)
@@ -165,6 +206,18 @@ export default function Dashboard({ user, onLogout }) {
 
 
   const navItems = navItemsByRole[user.role] || navItemsByRole.candidate
+
+  // Derived Candidate Data
+  const upcomingInterviews = dashboardData.interviews.filter(i => i.status !== "completed");
+  const nextInterview = upcomingInterviews.length > 0 ? upcomingInterviews[0] : null;
+
+  const totalAttempts = dashboardData.testAttempts.length;
+  const avgMcqScore = totalAttempts > 0 
+    ? Math.round(dashboardData.testAttempts.reduce((acc, a) => acc + ((a.score / a.totalQuestions) * 100), 0) / totalAttempts) 
+    : 0;
+
+  const recentTestResults = dashboardData.testAttempts.slice(0, 3);
+  const recentCodingAttempts = dashboardData.codingSubmissions.slice(0, 3);
 
   return (
     <div className="dashboard-layout">
@@ -339,7 +392,7 @@ export default function Dashboard({ user, onLogout }) {
                         <Icon.Interviews />
                       </div>
                       <div className="dashboard-stat-details">
-                        <span className="dashboard-stat-number">2</span>
+                        <span className="dashboard-stat-number">{upcomingInterviews.length}</span>
                         <span className="dashboard-stat-label">Upcoming Interviews</span>
                       </div>
                     </div>
@@ -349,7 +402,7 @@ export default function Dashboard({ user, onLogout }) {
                         <Icon.ChartPie />
                       </div>
                       <div className="dashboard-stat-details">
-                        <span className="dashboard-stat-number">88%</span>
+                        <span className="dashboard-stat-number">{avgMcqScore}%</span>
                         <span className="dashboard-stat-label">Avg MCQ Score</span>
                       </div>
                     </div>
@@ -375,18 +428,24 @@ export default function Dashboard({ user, onLogout }) {
                           <CardDescription>Get ready for your live coding round.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <div className="card-list-item" style={{ backgroundColor: "transparent", border: "none", padding: 0 }}>
-                            <div className="item-left-info">
-                              <span className="item-icon">
-                                <Icon.Interviews />
-                              </span>
-                              <div className="item-text-container">
-                                <span className="item-title" style={{ fontSize: "16px" }}>System Design & Coding Assessment</span>
-                                <span className="item-subtitle">Interviewer: SDE Lead | June 15, 2026 at 4:00 PM</span>
+                          {nextInterview ? (
+                            <div className="card-list-item" style={{ backgroundColor: "transparent", border: "none", padding: 0 }}>
+                              <div className="item-left-info">
+                                <span className="item-icon">
+                                  <Icon.Interviews />
+                                </span>
+                                <div className="item-text-container">
+                                  <span className="item-title" style={{ fontSize: "16px" }}>Technical Interview</span>
+                                  <span className="item-subtitle">Interviewer: {nextInterview.interviewerId?.name || "Pending"} | {new Date(nextInterview.scheduledDate).toLocaleString()}</span>
+                                </div>
                               </div>
+                              <Badge variant="teal">Scheduled</Badge>
                             </div>
-                            <Badge variant="teal">Scheduled</Badge>
-                          </div>
+                          ) : (
+                            <div style={{ color: "#9CA3AF", fontSize: "14px", padding: "12px 0" }}>
+                              No upcoming interviews scheduled.
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
 
@@ -413,30 +472,22 @@ export default function Dashboard({ user, onLogout }) {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              <TableRow>
-                                <TableCell style={{ fontWeight: 500 }}>Frontend Engineer Assessment</TableCell>
-                                <TableCell>June 12, 2026</TableCell>
-                                <TableCell>90/100</TableCell>
-                                <TableCell>
-                                  <Badge variant="teal">Passed</Badge>
-                                </TableCell>
-                              </TableRow>
-                              <TableRow>
-                                <TableCell style={{ fontWeight: 500 }}>JavaScript Core Quiz</TableCell>
-                                <TableCell>June 08, 2026</TableCell>
-                                <TableCell>85/100</TableCell>
-                                <TableCell>
-                                  <Badge variant="teal">Passed</Badge>
-                                </TableCell>
-                              </TableRow>
-                              <TableRow>
-                                <TableCell style={{ fontWeight: 500 }}>Algorithms Basics MCQ</TableCell>
-                                <TableCell>May 28, 2026</TableCell>
-                                <TableCell>72/100</TableCell>
-                                <TableCell>
-                                  <Badge variant="teal">Passed</Badge>
-                                </TableCell>
-                              </TableRow>
+                              {recentTestResults.length > 0 ? recentTestResults.map((result) => (
+                                <TableRow key={result._id}>
+                                  <TableCell style={{ fontWeight: 500 }}>{result.testId?.title || "Unknown Test"}</TableCell>
+                                  <TableCell>{new Date(result.submittedAt).toLocaleDateString()}</TableCell>
+                                  <TableCell>{result.score}/{result.totalQuestions}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={result.score >= (result.testId?.passingMarks || 0) ? "teal" : "coral"}>
+                                      {result.score >= (result.testId?.passingMarks || 0) ? "Passed" : "Failed"}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              )) : (
+                                <TableRow>
+                                  <TableCell colSpan={4} style={{ textAlign: "center", color: "#9CA3AF" }}>No recent tests found.</TableCell>
+                                </TableRow>
+                              )}
                             </TableBody>
                           </Table>
                         </CardContent>
@@ -458,44 +509,24 @@ export default function Dashboard({ user, onLogout }) {
                       </CardHeader>
                       <CardContent>
                         <div className="card-list">
-                          <div className="card-list-item">
-                            <div className="item-left-info">
-                              <span className="item-icon">
-                                <Icon.CodeCircle />
-                              </span>
-                              <div className="item-text-container">
-                                <span className="item-title">Two Sum</span>
-                                <span className="item-subtitle">JavaScript • Passed all test cases</span>
+                          {recentCodingAttempts.length > 0 ? recentCodingAttempts.map((attempt) => (
+                            <div className="card-list-item" key={attempt._id}>
+                              <div className="item-left-info">
+                                <span className="item-icon">
+                                  <Icon.CodeCircle />
+                                </span>
+                                <div className="item-text-container">
+                                  <span className="item-title">{attempt.questionId?.title || "Unknown Problem"}</span>
+                                  <span className="item-subtitle" style={{textTransform: "capitalize"}}>{attempt.language} • {attempt.verdict}</span>
+                                </div>
                               </div>
+                              <span className="item-timestamp">{new Date(attempt.submittedAt).toLocaleDateString()}</span>
                             </div>
-                            <span className="item-timestamp">2 hrs ago</span>
-                          </div>
-
-                          <div className="card-list-item">
-                            <div className="item-left-info">
-                              <span className="item-icon">
-                                <Icon.CodeCircle />
-                              </span>
-                              <div className="item-text-container">
-                                <span className="item-title">Reverse Integer</span>
-                                <span className="item-subtitle">Python • Passed 14/15 test cases</span>
-                              </div>
+                          )) : (
+                            <div style={{ color: "#9CA3AF", fontSize: "14px", padding: "12px 0", textAlign: "center" }}>
+                              No recent coding attempts.
                             </div>
-                            <span className="item-timestamp">1 day ago</span>
-                          </div>
-
-                          <div className="card-list-item">
-                            <div className="item-left-info">
-                              <span className="item-icon">
-                                <Icon.CodeCircle />
-                              </span>
-                              <div className="item-text-container">
-                                <span className="item-title">Merge K Sorted Lists</span>
-                                <span className="item-subtitle">JavaScript • Time Limit Exceeded</span>
-                              </div>
-                            </div>
-                            <span className="item-timestamp">3 days ago</span>
-                          </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

@@ -178,6 +178,39 @@ export default function CodingSandbox({ user, navigateToDashboard }) {
     }
   };
 
+  const handleRunTests = async () => {
+    if (!editorCode.trim()) return;
+    setSubmitting(true);
+    setVerdict(null);
+    setShowFailedDetails(false);
+
+    try {
+      const token = localStorage.getItem("intervux_token");
+      const res = await fetch(`/api/coding/questions/${selectedProblem._id}/run-tests`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          language: "javascript",
+          sourceCode: editorCode
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setVerdict(data);
+      } else {
+        alert(data.message || "Failed to evaluate code.");
+      }
+    } catch (err) {
+      alert("Error sending code to server.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Split resizer dragging logic
   const handleMouseDown = () => {
     isDraggingRef.current = true;
@@ -358,7 +391,7 @@ export default function CodingSandbox({ user, navigateToDashboard }) {
                       <Button
                         variant="outline"
                         style={{ width: "auto" }}
-                        onClick={handleSubmitCode}
+                        onClick={handleRunTests}
                         disabled={submitting}
                       >
                         <Icon.Play /> Run Tests
@@ -379,6 +412,7 @@ export default function CodingSandbox({ user, navigateToDashboard }) {
                     <div className={`verdict-flat-banner ${verdict.submission.verdict === "Accepted" ? "accepted" : "failed"}`}>
                       <div className="banner-header-row">
                         <span className="banner-verdict-title">
+                          {verdict.message === "Dry run evaluated" && <span style={{ fontSize: "14px", color: "#9CA3AF", marginRight: "8px" }}>[Dry Run]</span>}
                           {verdict.submission.verdict === "Accepted" ? "Accepted" : verdict.submission.verdict}
                         </span>
                         <span className="banner-verdict-ratio">

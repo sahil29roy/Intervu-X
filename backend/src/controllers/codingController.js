@@ -264,6 +264,93 @@ export const submitCodingAttempt = async (req, res) => {
     }
 };
 
+// POST /api/coding/questions/:id/run-tests (Candidate only)
+export const runTestsAttempt = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "Invalid question ID" });
+        }
+
+        const question = await CodingQuestion.findById(id);
+        if (!question) {
+            return res.status(404).json({ message: "Coding question not found" });
+        }
+
+        const parsed = submitAttemptSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: parsed.error.flatten().fieldErrors
+            });
+        }
+
+        const { language, sourceCode } = parsed.data;
+
+        // Currently, only javascript is natively executed
+        if (language.toLowerCase() !== "javascript") {
+            return res.status(400).json({ message: "Only JavaScript is supported for execution currently" });
+        }
+
+        if (!question.sampleInput || !question.sampleOutput) {
+            return res.status(500).json({ message: "No sample test case configured for this question" });
+        }
+
+        let passedCount = 0;
+        let totalExecutionTime = 0;
+        let finalVerdict = "Accepted";
+        let failedTestCaseDetails = null;
+
+        // Execute the code using our execution service against sample input
+        const result = await executeCode(language, sourceCode, question.sampleInput);
+
+        if (!result.success) {
+            finalVerdict = result.verdict;
+            failedTestCaseDetails = {
+                testCaseIndex: 1,
+                input: question.sampleInput,
+                expectedOutput: question.sampleOutput,
+                actualOutput: result.output,
+                error: result.error
+            };
+        } else {
+            const cleanExpected = question.sampleOutput.trim().replace(/\r\n/g, "\n");
+            const cleanActual = result.output.trim().replace(/\r\n/g, "\n");
+
+            totalExecutionTime += result.executionTimeMs;
+
+            if (cleanActual !== cleanExpected) {
+                finalVerdict = "Wrong Answer";
+                failedTestCaseDetails = {
+                    testCaseIndex: 1,
+                    input: question.sampleInput,
+                    expectedOutput: question.sampleOutput,
+                    actualOutput: result.output
+                };
+            } else {
+                passedCount = 1;
+            }
+        }
+
+        return res.status(200).json({
+            message: "Dry run evaluated",
+            submission: {
+                verdict: finalVerdict,
+                score: passedCount === 1 ? 100 : 0,
+                executionTime: Math.round(totalExecutionTime),
+                memoryUsed: Math.round(process.memoryUsage().heapUsed / 1024),
+            },
+            passedCount,
+            totalCount: 1,
+            failedTestCaseDetails
+        });
+
+    } catch (error) {
+        console.error("Error in runTestsAttempt:", error.message);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
 // GET /api/coding/submissions/my (Candidate only)
 export const getMyCodingSubmissions = async (req, res) => {
     try {
