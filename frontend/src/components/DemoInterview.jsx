@@ -88,6 +88,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
   const [editorCode, setEditorCode] = useState(MOCK_CODING_QUESTION.starterCode);
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   
   const [selectedMcqOption, setSelectedMcqOption] = useState(null);
   const [mcqFeedback, setMcqFeedback] = useState(null);
@@ -174,7 +175,15 @@ export default function DemoInterview({ user, navigateToDashboard }) {
         </div>
         <div className="demo-header-right">
           <div className="demo-timer">Time Elapsed: <span className="mono-time">{formatTime(elapsedTime)}</span></div>
-          <Button variant="default" style={{ backgroundColor: "#EF4444", color: "white" }} onClick={navigateToDashboard}>End Session</Button>
+          {!isSubmitted ? (
+              <Button variant="default" style={{ backgroundColor: "#D97706", color: "#171717" }} onClick={() => setIsSubmitted(true)}>
+                Submit All
+              </Button>
+            ) : (
+              <Button variant="destructive" onClick={navigateToDashboard}>
+                End Session
+              </Button>
+            )}
         </div>
       </div>
 
@@ -213,7 +222,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
             </div>
           </div>
 
-          <div className="demo-chat-panel">
+          <div className="demo-chat-panel" style={{ minHeight: "300px" }}>
             <div className="chat-header">Interview Chat</div>
             <div className="chat-messages">
               {messages.map(msg => (
@@ -250,7 +259,53 @@ export default function DemoInterview({ user, navigateToDashboard }) {
         {/* Right Panel: Content Area */}
         <div className="demo-right-panel" style={{ backgroundColor: activeSection === null ? "#121212" : "#0d0d0d" }}>
           
-          {activeSection === null && (
+          {isSubmitted ? (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px", overflowY: "auto" }}>
+              <div style={{ textAlign: "center", marginBottom: "40px", maxWidth: "600px" }}>
+                <h2 style={{ fontSize: "32px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "16px", color: "#22C55E" }}>Interview Completed!</h2>
+                <p style={{ color: "#9CA3AF", lineHeight: "1.6", fontSize: "16px" }}>
+                  You have successfully submitted your demo interview. Here is your preliminary score based on the automated checks.
+                </p>
+              </div>
+
+              <Card style={{ backgroundColor: "#1e1e1e", border: "1px solid #333", width: "100%", maxWidth: "500px" }}>
+                <CardHeader>
+                  <CardTitle style={{ fontSize: "20px" }}>Performance Summary</CardTitle>
+                </CardHeader>
+                <CardContent style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                  {/* MCQ Score */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "16px", borderBottom: "1px solid #333" }}>
+                    <div>
+                      <h4 style={{ fontWeight: 500, color: "#EDEDED" }}>Conceptual MCQ</h4>
+                      <p style={{ fontSize: "13px", color: "#9CA3AF", marginTop: "4px" }}>{MOCK_MCQ_QUESTION.question}</p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      {selectedMcqOption === MOCK_MCQ_QUESTION.correctAnswer ? (
+                        <span style={{ color: "#22C55E", fontWeight: "bold" }}>1 / 1 (Correct)</span>
+                      ) : (
+                        <span style={{ color: "#EF4444", fontWeight: "bold" }}>0 / 1 (Incorrect)</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Coding Score */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <h4 style={{ fontWeight: 500, color: "#EDEDED" }}>Live Coding</h4>
+                      <p style={{ fontSize: "13px", color: "#9CA3AF", marginTop: "4px" }}>{MOCK_CODING_QUESTION.title}</p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      {output && output.includes(MOCK_CODING_QUESTION.sampleOutput) ? (
+                        <span style={{ color: "#22C55E", fontWeight: "bold" }}>Pass</span>
+                      ) : (
+                        <span style={{ color: "#EF4444", fontWeight: "bold" }}>Fail</span>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : activeSection === null ? (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px" }}>
               <div style={{ textAlign: "center", marginBottom: "40px", maxWidth: "500px" }}>
                 <h2 style={{ fontSize: "28px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "16px" }}>Select Interview Section</h2>
@@ -295,9 +350,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                 </Card>
               </div>
             </div>
-          )}
-
-          {activeSection === "mcq" && (
+          ) : activeSection === "mcq" ? (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "32px", overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", paddingBottom: "16px", borderBottom: "1px solid #262626" }}>
                 <h3 style={{ fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif" }}>Conceptual Questions</h3>
@@ -367,9 +420,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                 </CardContent>
               </Card>
             </div>
-          )}
-
-          {activeSection === "coding" && (
+          ) : activeSection === "coding" ? (
             <>
               <div className="editor-toolbar">
                 <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
@@ -451,7 +502,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                 </div>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
