@@ -272,10 +272,10 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
         localStorage.setItem("intervux_user", JSON.stringify(data.user))
         setIsEditing(false)
       } else {
-        alert(data.message || "Failed to update profile")
+        console.log(data.message || "Failed to update profile")
       }
     } catch (err) {
-      alert("Error saving profile changes")
+      console.log("Error saving profile changes")
     } finally {
       setIsSaving(false)
     }
@@ -305,10 +305,10 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
         setUser(data.user)
         localStorage.setItem("intervux_user", JSON.stringify(data.user))
       } else {
-        alert(data.message || "Failed to upload profile picture")
+        console.log(data.message || "Failed to upload profile picture")
       }
     } catch (err) {
-      alert("Error connecting to server to upload picture")
+      console.log("Error connecting to server to upload picture")
     } finally {
       setUploadLoading(false)
     }
@@ -338,10 +338,10 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
         setUser(data.user)
         localStorage.setItem("intervux_user", JSON.stringify(data.user))
       } else {
-        alert(data.message || "Failed to upload resume")
+        console.log(data.message || "Failed to upload resume")
       }
     } catch (err) {
-      alert("Error connecting to server to upload resume")
+      console.log("Error connecting to server to upload resume")
     } finally {
       setResumeLoading(false)
     }
@@ -1316,19 +1316,19 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
               </div>
 
               <div className="admin-actions-grid">
-                <Button variant="outline" onClick={() => alert("Redirecting to User Management...")}>
+                <Button variant="outline" onClick={() => console.log("Redirecting to User Management...")}>
                   Manage Platform Users
                 </Button>
-                <Button variant="outline" onClick={() => alert("Redirecting to Problem Bank Editor...")}>
+                <Button variant="outline" onClick={() => console.log("Redirecting to Problem Bank Editor...")}>
                   Manage Assessment Problems
                 </Button>
-                <Button variant="outline" onClick={() => alert("Loading Audit logs...")}>
+                <Button variant="outline" onClick={() => console.log("Loading Audit logs...")}>
                   View Activity Logs
                 </Button>
                 <Button
                   variant="outline"
                   style={{ borderColor: "rgba(245, 158, 11, 0.4)", color: "#F59E0B" }}
-                  onClick={() => alert("No reports outstanding")}
+                  onClick={() => console.log("No reports outstanding")}
                 >
                   Inspect Flagged Content
                 </Button>

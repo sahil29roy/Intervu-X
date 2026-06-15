@@ -163,7 +163,7 @@ export function MCQTestCandidateView({ user, navigateToDashboard }) {
 
   // Auto-submit when timer runs out
   const autoSubmit = async (tId, qList) => {
-    alert("Time is up! Your answers are being submitted automatically.");
+    console.log("Time is up! Your answers are being submitted automatically.");
     await executeSubmission(tId, qList);
   };
 
@@ -701,7 +701,7 @@ export function MCQTestAdminView({ user, navigateToDashboard }) {
   const handleCreateTest = async (e) => {
     e.preventDefault();
     if (!newTest.title || !newTest.category) {
-      alert("Title and Category are required!");
+      console.log("Title and Category are required!");
       return;
     }
 
@@ -730,10 +730,10 @@ export function MCQTestAdminView({ user, navigateToDashboard }) {
         });
         fetchAdminData();
       } else {
-        alert(data.message || "Failed to create test");
+        console.log(data.message || "Failed to create test");
       }
     } catch (err) {
-      alert("Error connecting to server.");
+      console.log("Error connecting to server.");
     } finally {
       setCreatingTest(false);
     }
@@ -760,10 +760,10 @@ export function MCQTestAdminView({ user, navigateToDashboard }) {
         setSubject(test.category);
         setDifficulty("medium");
       } else {
-        alert(data.message || "Failed to fetch test questions.");
+        console.log(data.message || "Failed to fetch test questions.");
       }
     } catch (err) {
-      alert("Error retrieving test details.");
+      console.log("Error retrieving test details.");
     } finally {
       setLoading(false);
     }
@@ -772,11 +772,11 @@ export function MCQTestAdminView({ user, navigateToDashboard }) {
   const handleAddQuestion = async (e) => {
     e.preventDefault();
     if (!questionText || options.some(opt => !opt) || !correctAnswer || !subject) {
-      alert("All fields are required to add a question!");
+      console.log("All fields are required to add a question!");
       return;
     }
     if (!options.includes(correctAnswer)) {
-      alert("Correct Answer must match one of the 4 options exactly!");
+      console.log("Correct Answer must match one of the 4 options exactly!");
       return;
     }
 
@@ -811,10 +811,10 @@ export function MCQTestAdminView({ user, navigateToDashboard }) {
         setCorrectAnswer("");
         setExplanation("");
       } else {
-        alert(data.message || "Failed to add question.");
+        console.log(data.message || "Failed to add question.");
       }
     } catch (err) {
-      alert("Error adding question to test.");
+      console.log("Error adding question to test.");
     } finally {
       setAddingQuestion(false);
     }

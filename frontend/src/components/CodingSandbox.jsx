@@ -169,10 +169,10 @@ export default function CodingSandbox({ user, navigateToDashboard }) {
           setSubmissions(subsData.submissions);
         }
       } else {
-        alert(data.message || "Failed to evaluate code submission.");
+        console.log(data.message || "Failed to evaluate code submission.");
       }
     } catch (err) {
-      alert("Error sending submission to server.");
+      console.log("Error sending submission to server.");
     } finally {
       setSubmitting(false);
     }
@@ -202,10 +202,10 @@ export default function CodingSandbox({ user, navigateToDashboard }) {
       if (res.ok) {
         setVerdict(data);
       } else {
-        alert(data.message || "Failed to evaluate code.");
+        console.log(data.message || "Failed to evaluate code.");
       }
     } catch (err) {
-      alert("Error sending code to server.");
+      console.log("Error sending code to server.");
     } finally {
       setSubmitting(false);
     }

@@ -80,6 +80,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
   const [isRunning, setIsRunning] = useState(false);
   
   const [selectedMcqOption, setSelectedMcqOption] = useState(null);
+  const [mcqFeedback, setMcqFeedback] = useState(null);
 
   // Time tracking for the mock interview
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -328,10 +329,19 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                     </div>
                   ))}
                   
-                  <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "16px" }}>
+                    {mcqFeedback && (
+                      <span style={{ 
+                        color: mcqFeedback === "correct" ? "#22C55E" : "#EF4444", 
+                        fontWeight: 500,
+                        fontSize: "14px"
+                      }}>
+                        {mcqFeedback === "correct" ? "Correct Answer! Great job." : "Incorrect Answer. Try again."}
+                      </span>
+                    )}
                     <Button 
                       onClick={() => {
-                        alert(selectedMcqOption === MOCK_MCQ_QUESTION.correctAnswer ? "Correct Answer! Great job." : "Incorrect Answer. Try again.");
+                        setMcqFeedback(selectedMcqOption === MOCK_MCQ_QUESTION.correctAnswer ? "correct" : "incorrect");
                       }}
                       disabled={!selectedMcqOption}
                     >
