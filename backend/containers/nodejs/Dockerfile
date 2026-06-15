@@ -7,4 +7,6 @@ RUN addgroup -S sandbox && adduser -S sandbox -G sandbox
 USER sandbox
 
 # Execute solution.js script by default
-CMD ["node", "solution.js"]
+CMD ["node", "solution.js"] 
+
+
