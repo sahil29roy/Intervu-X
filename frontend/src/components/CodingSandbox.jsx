@@ -191,7 +191,7 @@ export default function CodingSandbox({ user, navigateToDashboard }) {
     if (!isDraggingRef.current || !splitPaneRef.current) return;
     const containerRect = splitPaneRef.current.getBoundingClientRect();
     const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-    
+
     // Bounds between 20% and 80%
     if (newLeftWidth >= 20 && newLeftWidth <= 80) {
       setLeftWidth(newLeftWidth);
@@ -224,9 +224,7 @@ export default function CodingSandbox({ user, navigateToDashboard }) {
     );
   }
 
-  // ----------------------------------------------------
   // WORKSPACE VIEW (SINGLE PROBLEM ACTIVE)
-  // ----------------------------------------------------
   if (selectedProblem) {
     const problemSubmissions = submissions.filter(
       (sub) => sub.questionId?._id === selectedProblem._id
@@ -504,9 +502,7 @@ export default function CodingSandbox({ user, navigateToDashboard }) {
     );
   }
 
-  // ----------------------------------------------------
   // LIST VIEW (NO PROBLEM SELECTED)
-  // ----------------------------------------------------
   return (
     <div className="mcq-container">
       {errorMsg && (
