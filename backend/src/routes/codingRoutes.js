@@ -8,7 +8,8 @@ import {
     getCodingQuestionById,
     submitCodingAttempt,
     getMyCodingSubmissions,
-    getAllCodingSubmissions
+    getAllCodingSubmissions,
+    runGeneralCode
 } from "../controllers/codingController.js";
 
 const router = express.Router();
@@ -16,6 +17,7 @@ const router = express.Router();
 // Candidates, Interviewers, and Admins
 router.get("/questions", protectRoute, getCodingQuestions);
 router.get("/questions/:id", protectRoute, getCodingQuestionById);
+router.post("/run", protectRoute, runGeneralCode);
 
 // Candidate only
 router.post("/questions/:id/submit", protectRoute, authorizeRoles("candidate"), submitCodingAttempt);
@@ -30,3 +32,4 @@ router.delete("/questions/:id", protectRoute, authorizeRoles("admin"), deleteCod
 router.get("/submissions/all", protectRoute, authorizeRoles("admin", "interviewer"), getAllCodingSubmissions);
 
 export default router;
+

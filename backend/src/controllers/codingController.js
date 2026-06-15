@@ -26,6 +26,12 @@ const submitAttemptSchema = z.object({
     sourceCode: z.string().min(1, "Source code is required")
 });
 
+const runGeneralCodeSchema = z.object({
+    language: z.string().min(1, "Language is required"),
+    sourceCode: z.string().min(1, "Source code is required"),
+    inputCase: z.string().optional().default("")
+});
+
 // Helper: Run JavaScript code in safe VM sandbox
 // TODO: Implement secure Docker container runner for code execution.
 // For now, testing-flow is maintained via mock execution logic in the submission controller.
@@ -283,6 +289,35 @@ export const getAllCodingSubmissions = async (req, res) => {
         return res.status(200).json({ submissions });
     } catch (error) {
         console.error("Error in getAllCodingSubmissions:", error.message);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+// POST /api/coding/run (Authenticated only)
+export const runGeneralCode = async (req, res) => {
+    try {
+        const parsed = runGeneralCodeSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: parsed.error.flatten().fieldErrors
+            });
+        }
+
+        const { language, sourceCode, inputCase } = parsed.data;
+
+        if (language.toLowerCase() !== "javascript") {
+            return res.status(400).json({ message: "Only JavaScript is supported for execution currently" });
+        }
+
+        const result = await executeCode(language, sourceCode, inputCase);
+
+        return res.status(200).json({
+            message: "Execution completed",
+            result
+        });
+    } catch (error) {
+        console.error("Error in runGeneralCode:", error.message);
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
