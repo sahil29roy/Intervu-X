@@ -2379,20 +2379,31 @@ body {
 }
 
 .chat-input-area {
-  padding: 12px;
+  padding: 16px;
+  padding-bottom: 24px;
   border-top: 1px solid #262626;
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
 .chat-input-area input {
   flex: 1;
-  background-color: #1e1e1e;
-  border: 1px solid #333;
+  background-color: #262626;
+  border: 1px solid #555;
   border-radius: 6px;
   padding: 8px 12px;
   color: #EDEDED;
   outline: none;
+  transition: all 0.2s;
+}
+
+.chat-input-area input:focus {
+  border-color: #D97706;
+  background-color: #333;
+}
+
+.chat-input-area input::placeholder {
+  color: #9CA3AF;
 }
 
 .demo-right-panel {

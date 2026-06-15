@@ -51,14 +51,19 @@ const Icon = {
 const MOCK_CODING_QUESTION = {
   title: "Two Sum",
   description: "Given an array of integers `nums` and an integer `target`, return the indices of the two numbers such that they add up to `target`.\n\nYou may assume that each input has exactly one solution.",
+  sampleInput: "nums = [2,7,11,15]\ntarget = 9",
+  sampleOutput: "[0,1]",
   starterCode: `// Mock Coding Question: Two Sum
 function twoSum(nums, target) {
     // Write your code here
     
 }
 
-const input = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'));
-console.log(JSON.stringify(twoSum(input.nums, input.target)));`
+const inputLine = readLine();
+if (inputLine) {
+    const input = JSON.parse(inputLine);
+    console.log(JSON.stringify(twoSum(input.nums, input.target)));
+}`
 };
 
 const MOCK_MCQ_QUESTION = {
@@ -379,6 +384,20 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                   <div style={{ color: "#D1D5DB", fontSize: "14px", lineHeight: "1.6", whiteSpace: "pre-wrap" }}>
                     {MOCK_CODING_QUESTION.description}
                   </div>
+                  
+                  {MOCK_CODING_QUESTION.sampleInput && (
+                    <div style={{ marginTop: "24px" }}>
+                      <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#EDEDED", marginBottom: "8px" }}>Sample Input:</h4>
+                      <pre className="io-sample-block">{MOCK_CODING_QUESTION.sampleInput}</pre>
+                    </div>
+                  )}
+
+                  {MOCK_CODING_QUESTION.sampleOutput && (
+                    <div style={{ marginTop: "20px" }}>
+                      <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#EDEDED", marginBottom: "8px" }}>Sample Output:</h4>
+                      <pre className="io-sample-block">{MOCK_CODING_QUESTION.sampleOutput}</pre>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
