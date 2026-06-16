@@ -110,6 +110,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
   const screenStreamRef = useRef(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [remoteScreenActive, setRemoteScreenActive] = useState(false);
+  const [remoteScreenStream, setRemoteScreenStream] = useState(null);
 
   // ════════════════════════════════════
   // ══  SOCKET.IO LISTENERS
@@ -271,6 +272,12 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     }
   }, [permissionsGranted]);
 
+  const screenVideoRefCallback = useCallback(node => {
+    if (node && remoteScreenStream) {
+      node.srcObject = remoteScreenStream;
+    }
+  }, [remoteScreenStream]);
+
   const createPeerConnection = useCallback(() => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
 
@@ -282,10 +289,15 @@ export default function DemoInterview({ user, navigateToDashboard }) {
 
     pc.ontrack = (e) => {
       const stream = e.streams[0];
-      if (e.track.label && e.track.label.includes("screen")) {
-        if (screenShareRef.current) screenShareRef.current.srcObject = stream;
+      
+      // We assume the first stream we receive is the camera/mic. 
+      // If we receive a NEW stream with a different ID, it must be the screen share.
+      if (remoteVideoRef.current && remoteVideoRef.current.srcObject && remoteVideoRef.current.srcObject.id !== stream.id) {
+        setRemoteScreenStream(stream);
       } else {
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = stream;
+        if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== stream) {
+          remoteVideoRef.current.srcObject = stream;
+        }
       }
     };
 
@@ -568,36 +580,50 @@ export default function DemoInterview({ user, navigateToDashboard }) {
   // ══  RENDER: PHASE 3 — ACTIVE SESSION
   // ════════════════════════════════════════════════════
 
+  const getMySenderName = () => user?.name || (isInterviewer ? "Interviewer" : "Candidate");
+
   const ChatPanel = () => (
-    <div className="demo-chat-panel" style={{ minHeight: "250px" }}>
-      <div className="chat-header">Interview Chat — Room {roomId}</div>
-      <div className="chat-messages">
-        {messages.map(msg => (
-          <div
-            key={msg.id}
-            className={`chat-msg ${msg.sender === "system" ? "system" : "received"}`}
-            style={{
-              alignSelf: msg.sender === user?.name ? "flex-end" : msg.sender === "system" ? "center" : "flex-start",
-              backgroundColor: msg.sender === user?.name ? "#22C55E" : msg.sender === "system" ? "transparent" : "#1e1e1e",
-              color: msg.sender === user?.name ? "#000" : "#E5E7EB",
-              border: msg.sender === user?.name ? "none" : msg.sender === "system" ? "none" : "1px solid #262626"
-            }}
-          >
-            {msg.sender !== "system" && <strong style={{ opacity: 0.8 }}>{msg.sender}: </strong>}
-            {msg.text}
-          </div>
-        ))}
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", backgroundColor: "#1e1e1e", borderTop: "1px solid #333", borderLeft: "1px solid #333" }}>
+      <div style={{ padding: "12px 16px", backgroundColor: "#262626", borderBottom: "1px solid #333", fontWeight: 600, color: "#EDEDED", display: "flex", alignItems: "center", gap: "8px" }}>
+        <Icon.Activity /> Interview Chat
+      </div>
+      <div style={{ flex: 1, padding: "16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
+        {messages.length === 0 && <p style={{ color: "#6B7280", textAlign: "center", fontSize: "13px", fontStyle: "italic", marginTop: "20px" }}>No messages yet. Say hi!</p>}
+        {messages.map(msg => {
+          const isMe = msg.sender === getMySenderName();
+          const isSystem = msg.sender === "system";
+          return (
+            <div
+              key={msg.id}
+              style={{
+                alignSelf: isMe ? "flex-end" : isSystem ? "center" : "flex-start",
+                backgroundColor: isMe ? "#D97706" : isSystem ? "transparent" : "#262626",
+                color: isSystem ? "#9CA3AF" : "#EDEDED",
+                padding: isSystem ? "4px 8px" : "8px 12px",
+                borderRadius: "8px",
+                maxWidth: "80%",
+                fontSize: "14px",
+                fontStyle: isSystem ? "italic" : "normal",
+                border: isSystem ? "none" : "1px solid #333"
+              }}
+            >
+              {!isSystem && <div style={{ fontSize: "11px", color: isMe ? "#FDE68A" : "#9CA3AF", marginBottom: "4px" }}>{msg.sender}</div>}
+              <div style={{ lineHeight: "1.4", wordBreak: "break-word" }}>{msg.text}</div>
+            </div>
+          );
+        })}
         <div ref={chatEndRef} />
       </div>
-      <div className="chat-input-area">
+      <div style={{ padding: "12px", backgroundColor: "#262626", borderTop: "1px solid #333", display: "flex", gap: "8px" }}>
         <input
           type="text"
           placeholder="Type a message..."
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleSendMessage(); }}
+          style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid #444", backgroundColor: "#121212", color: "#EDEDED", fontSize: "14px", outline: "none" }}
         />
-        <Button variant="outline" onClick={handleSendMessage}>Send</Button>
+        <Button onClick={handleSendMessage} style={{ backgroundColor: "#D97706", color: "#171717", fontWeight: "bold" }}>Send</Button>
       </div>
     </div>
   );
@@ -673,7 +699,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderBottom: "1px solid #262626", padding: "24px", minHeight: "50%" }}>
               {remoteScreenActive ? (
                 <div style={{ width: "100%", height: "100%", position: "relative" }}>
-                  <video ref={screenShareRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "8px", border: "1px solid #333" }} />
+                  <video ref={screenVideoRefCallback} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "8px", border: "1px solid #333" }} />
                   <Badge style={{ position: "absolute", top: "12px", left: "12px", backgroundColor: "#EF4444" }}>SCREEN SHARE LIVE</Badge>
                 </div>
               ) : (
