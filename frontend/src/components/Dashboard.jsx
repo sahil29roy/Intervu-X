@@ -14,6 +14,8 @@ import LocalIDE from "./LocalIDE"
 import DemoInterview from "./DemoInterview"
 import InterviewsList from "./InterviewsList"
 import LiveInterview from "./LiveInterview"
+import CandidatesList from "./CandidatesList"
+import ProblemsBank from "./ProblemsBank"
 
 export default function Dashboard({ user, onLogout }) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -369,7 +371,21 @@ export default function Dashboard({ user, onLogout }) {
             />
           )}
 
-          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && activeNav !== "interviews" && activeNav !== "live_interview" && (
+          {activeNav === "candidates" && (
+            <CandidatesList
+              user={user}
+              onJoinInterview={(id) => {
+                setActiveInterviewId(id);
+                setActiveNav("live_interview");
+              }}
+            />
+          )}
+
+          {activeNav === "problems_bank" && (
+            <ProblemsBank user={user} />
+          )}
+
+          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && activeNav !== "interviews" && activeNav !== "live_interview" && activeNav !== "candidates" && activeNav !== "problems_bank" && (
             <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
               <CardHeader>
                 <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>

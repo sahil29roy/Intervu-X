@@ -89,7 +89,10 @@ export const getMyInterviews = async (req, res) => {
 // GET /api/interviews/assigned (Interviewer only)
 export const getAssignedInterviews = async (req, res) => {
     try {
-        const interviews = await Interview.find({ interviewerId: req.user._id })
+        const interviews = await Interview.find({ 
+            interviewerId: req.user._id,
+            status: { $in: ["pending", "ongoing"] }
+        })
             .populate("candidateId", "name email headline skills resumeUrl profilePicture")
             .sort({ scheduledDate: 1 });
 
