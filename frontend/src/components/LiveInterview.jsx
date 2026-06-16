@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
-import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000");
+// Connect to the current host (handled by Vite proxy in dev)
+const socket = io();
 
 const Icon = {
   Video: () => (

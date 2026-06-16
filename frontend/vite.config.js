@@ -14,12 +14,17 @@ export default defineConfig({
     },
   },
   server: {
+    host: true, // Allow connections from other devices on the network
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       },
+      '/socket.io': {
+        target: 'http://localhost:3000',
+        ws: true,
+      }
     },
   },
 })

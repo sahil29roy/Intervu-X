@@ -47,29 +47,108 @@ app.get("/books", (req, res) => {
     res.status(200).json({ msg: "this is books endpoint" })
 })
 
-// Socket.io Real-time Logic
+// ── Socket.io Real-time Logic ──
+
+// In-memory room state: Map<roomId, { candidate: socketId, interviewer: socketId }>
+const rooms = new Map();
+
 io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+    console.log("Socket connected:", socket.id);
 
-    socket.on("join-interview", (interviewId) => {
-        socket.join(interviewId);
-        console.log(`Socket ${socket.id} joined interview room ${interviewId}`);
+    // ── Join Room ──
+    socket.on("join-room", ({ roomId, role, userName }) => {
+        socket.join(roomId);
+        socket.data = { roomId, role, userName };
+
+        // Initialize room if it doesn't exist
+        if (!rooms.has(roomId)) {
+            rooms.set(roomId, { candidate: null, interviewer: null });
+        }
+
+        const room = rooms.get(roomId);
+        room[role] = { socketId: socket.id, userName };
+
+        console.log(`[Room ${roomId}] ${role} "${userName}" joined (${socket.id})`);
+
+        // Broadcast updated participant list to everyone in the room
+        const statusPayload = {
+            roomId,
+            interviewerOnline: !!room.interviewer,
+            candidateOnline: !!room.candidate,
+            participantCount: (room.interviewer ? 1 : 0) + (room.candidate ? 1 : 0)
+        };
+        io.to(roomId).emit("participant-status", statusPayload);
+
+        // Notify others in the room that someone joined (legacy)
+        socket.to(roomId).emit("user-joined", { role, userName });
     });
 
-    socket.on("chat-message", ({ interviewId, message }) => {
-        socket.to(interviewId).emit("chat-message", message);
+    // ── Chat ──
+    socket.on("chat-message", ({ roomId, message }) => {
+        socket.to(roomId).emit("chat-message", message);
     });
 
-    socket.on("code-update", ({ interviewId, code }) => {
-        socket.to(interviewId).emit("code-update", code);
+    // ── Code Sync (Candidate → Interviewer) ──
+    socket.on("code-update", ({ roomId, code }) => {
+        socket.to(roomId).emit("code-update", code);
     });
 
-    socket.on("mcq-select", ({ interviewId, optionId }) => {
-        socket.to(interviewId).emit("mcq-select", optionId);
+    // ── MCQ Sync (Candidate → Interviewer) ──
+    socket.on("mcq-update", ({ roomId, optionId }) => {
+        socket.to(roomId).emit("mcq-update", optionId);
     });
 
+    // ── Candidate Activity Feed ──
+    socket.on("candidate-activity", ({ roomId, activity }) => {
+        socket.to(roomId).emit("candidate-activity", activity);
+    });
+
+    // ── WebRTC Signaling ──
+    socket.on("webrtc-offer", ({ roomId, offer }) => {
+        socket.to(roomId).emit("webrtc-offer", offer);
+    });
+
+    socket.on("webrtc-answer", ({ roomId, answer }) => {
+        socket.to(roomId).emit("webrtc-answer", answer);
+    });
+
+    socket.on("ice-candidate", ({ roomId, candidate }) => {
+        socket.to(roomId).emit("ice-candidate", candidate);
+    });
+
+    // ── Screen Share Notifications ──
+    socket.on("screen-share-start", ({ roomId }) => {
+        socket.to(roomId).emit("screen-share-start");
+    });
+
+    socket.on("screen-share-stop", ({ roomId }) => {
+        socket.to(roomId).emit("screen-share-stop");
+    });
+
+    // ── Disconnect ──
     socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
+        const { roomId, role, userName } = socket.data || {};
+        if (roomId && rooms.has(roomId)) {
+            const room = rooms.get(roomId);
+            if (room[role]?.socketId === socket.id) {
+                room[role] = null;
+            }
+            // Broadcast updated participant list
+            const statusPayload = {
+                roomId,
+                interviewerOnline: !!room.interviewer,
+                candidateOnline: !!room.candidate,
+                participantCount: (room.interviewer ? 1 : 0) + (room.candidate ? 1 : 0)
+            };
+            io.to(roomId).emit("participant-status", statusPayload);
+
+            // Clean up empty rooms
+            if (!room.candidate && !room.interviewer) {
+                rooms.delete(roomId);
+                console.log(`[Room ${roomId}] DELETED — empty`);
+            }
+        }
+        console.log("Socket disconnected:", socket.id);
     });
 });
 
