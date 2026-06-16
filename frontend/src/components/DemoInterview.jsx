@@ -1,8 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
+import { io } from "socket.io-client";
+
+// Single global socket connection — shared across component renders
+const socket = io("http://localhost:5000");
+
+// Hardcoded room ID — both candidate and interviewer join this exact room
+const DEMO_ROOM_ID = "demo-interview-room";
 
 const Icon = {
   Video: () => (
@@ -83,26 +90,66 @@ const MOCK_MCQ_QUESTION = {
 };
 
 export default function DemoInterview({ user, navigateToDashboard }) {
-  const [activeSection, setActiveSection] = useState(null); // null | 'mcq' | 'coding'
-  
+  const isInterviewer = user?.role === "interviewer";
+
+  const [activeSection, setActiveSection] = useState(null);
   const [editorCode, setEditorCode] = useState(MOCK_CODING_QUESTION.starterCode);
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  
   const [selectedMcqOption, setSelectedMcqOption] = useState(null);
   const [mcqFeedback, setMcqFeedback] = useState(null);
-
-  // Time tracking for the mock interview
   const [elapsedTime, setElapsedTime] = useState(0);
 
-  // Chat State
+  // Use a ref to prevent code-update echo loops.
+  // When we receive a remote code-update, we set this flag so the
+  // onChange handler knows NOT to re-emit the same change back.
+  const isRemoteCodeUpdate = useRef(false);
+
   const [messages, setMessages] = useState([
-    { id: 1, sender: "system", text: "Session started. Recording is off for demo." },
-    { id: 2, sender: user?.role === "interviewer" ? "Candidate" : "Interviewer", text: user?.role === "interviewer" ? "Hello! I am ready for the interview." : "Hello test user, let's start with a simple JavaScript exercise or some conceptual questions." }
+    { id: 1, sender: "system", text: "Session started. Both participants have joined the demo room." }
   ]);
   const [chatInput, setChatInput] = useState("");
+  const chatEndRef = useRef(null);
 
+  // ── Socket.IO: Join Room + Listen ──
+  useEffect(() => {
+    // Join the single shared demo room
+    socket.emit("join-interview", DEMO_ROOM_ID);
+
+    // ── Chat ──
+    const handleChatMessage = (msg) => {
+      setMessages(prev => [...prev, msg]);
+    };
+
+    // ── Code Sync ──
+    const handleCodeUpdate = (code) => {
+      isRemoteCodeUpdate.current = true;
+      setEditorCode(code);
+    };
+
+    // ── MCQ Sync ──
+    const handleMcqSelect = (optionId) => {
+      setSelectedMcqOption(optionId);
+    };
+
+    socket.on("chat-message", handleChatMessage);
+    socket.on("code-update", handleCodeUpdate);
+    socket.on("mcq-select", handleMcqSelect);
+
+    return () => {
+      socket.off("chat-message", handleChatMessage);
+      socket.off("code-update", handleCodeUpdate);
+      socket.off("mcq-select", handleMcqSelect);
+    };
+  }, []);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setElapsedTime(prev => prev + 1);
@@ -116,17 +163,49 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     return `${m}:${s}`;
   };
 
+  // ── Chat Send ──
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    setMessages(prev => [...prev, { id: Date.now(), sender: "You", text: chatInput.trim() }]);
+    const newMessage = {
+      id: Date.now(),
+      sender: user?.name || (isInterviewer ? "Interviewer" : "Candidate"),
+      text: chatInput.trim()
+    };
+    // Append locally
+    setMessages(prev => [...prev, newMessage]);
+    // Broadcast to room
+    socket.emit("chat-message", { interviewId: DEMO_ROOM_ID, message: newMessage });
     setChatInput("");
   };
 
+  // ── Code Editor Change (Candidate only) ──
+  const handleCodeChange = (val) => {
+    // If this change was triggered by a remote update, don't re-emit
+    if (isRemoteCodeUpdate.current) {
+      isRemoteCodeUpdate.current = false;
+      return;
+    }
+    setEditorCode(val);
+    // Only candidates emit code changes
+    if (!isInterviewer) {
+      socket.emit("code-update", { interviewId: DEMO_ROOM_ID, code: val });
+    }
+  };
+
+  // ── MCQ Select (Candidate only) ──
+  const handleMcqClick = (optId) => {
+    if (isInterviewer) return; // Interviewers cannot select
+    setSelectedMcqOption(optId);
+    setMcqFeedback(null);
+    socket.emit("mcq-select", { interviewId: DEMO_ROOM_ID, optionId: optId });
+  };
+
+  // ── Run Code (Candidate only) ──
   const handleRunCode = async () => {
-    if (!editorCode.trim()) return;
+    if (!editorCode.trim() || isInterviewer) return;
     setIsRunning(true);
-    setOutput("Executing...\\n");
-    
+    setOutput("Executing...\n");
+
     try {
       const token = localStorage.getItem("intervux_token");
       const res = await fetch("/api/coding/run", {
@@ -138,7 +217,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
         body: JSON.stringify({
           language: "javascript",
           sourceCode: editorCode,
-          inputCase: JSON.stringify({ nums: [2, 7, 11, 15], target: 9 }) // Fake stdin for the demo script
+          inputCase: JSON.stringify({ nums: [2, 7, 11, 15], target: 9 })
         })
       });
 
@@ -162,6 +241,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     }
   };
 
+  // ── Render ──
   return (
     <div className="demo-interview-layout">
       {/* Top Header */}
@@ -175,19 +255,19 @@ export default function DemoInterview({ user, navigateToDashboard }) {
         </div>
         <div className="demo-header-right">
           <div className="demo-timer">Time Elapsed: <span className="mono-time">{formatTime(elapsedTime)}</span></div>
-          {user?.role === "interviewer" ? (
+          {isInterviewer ? (
             <Button variant="destructive" onClick={navigateToDashboard}>
               End Session
             </Button>
           ) : !isSubmitted ? (
-              <Button variant="default" style={{ backgroundColor: "#D97706", color: "#171717" }} onClick={() => setIsSubmitted(true)}>
-                Submit All
-              </Button>
-            ) : (
-              <Button variant="destructive" onClick={navigateToDashboard}>
-                End Session
-              </Button>
-            )}
+            <Button variant="default" style={{ backgroundColor: "#D97706", color: "#171717" }} onClick={() => setIsSubmitted(true)}>
+              Submit All
+            </Button>
+          ) : (
+            <Button variant="destructive" onClick={navigateToDashboard}>
+              End Session
+            </Button>
+          )}
         </div>
       </div>
 
@@ -195,19 +275,19 @@ export default function DemoInterview({ user, navigateToDashboard }) {
         {/* Left Panel: Video & Chat */}
         <div className="demo-left-panel">
           <div className="video-streams-container">
-            {/* Interviewer Video Mock */}
+            {/* Remote user video */}
             <div className="video-box interviewer-video">
               <div className="video-placeholder">
                 <Icon.Video />
-                <span>{user?.role === "interviewer" ? "Candidate Feed (Simulated)" : "Interviewer Feed (Simulated)"}</span>
+                <span>{isInterviewer ? "Candidate Feed (Simulated)" : "Interviewer Feed (Simulated)"}</span>
               </div>
               <div className="video-footer">
-                <span>{user?.role === "interviewer" ? "Candidate" : "Interviewer"}</span>
+                <span>{isInterviewer ? "Candidate" : "Interviewer"}</span>
                 <Icon.MicOff />
               </div>
             </div>
 
-            {/* Candidate Video Mock */}
+            {/* Local user video */}
             <div className="video-box candidate-video">
               <div className="video-placeholder">
                 {user?.profilePicture ? (
@@ -215,45 +295,45 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                 ) : (
                   <Avatar style={{ width: "64px", height: "64px", border: "2px solid #333" }}>
                     <AvatarFallback style={{ fontSize: "24px", backgroundColor: "#262626", color: "#ededed" }}>
-                      {user.name?.charAt(0).toUpperCase() || "U"}
+                      {user?.name?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                 )}
               </div>
               <div className="video-footer">
-                <span>{user?.name} (You - {user?.role === "interviewer" ? "Interviewer" : "Candidate"})</span>
+                <span>{user?.name} (You - {isInterviewer ? "Interviewer" : "Candidate"})</span>
               </div>
             </div>
           </div>
 
+          {/* Shared Chat — fully synchronized via socket */}
           <div className="demo-chat-panel" style={{ minHeight: "300px" }}>
             <div className="chat-header">Interview Chat</div>
             <div className="chat-messages">
               {messages.map(msg => (
-                <div 
-                  key={msg.id} 
+                <div
+                  key={msg.id}
                   className={`chat-msg ${msg.sender === "system" ? "system" : "received"}`}
                   style={{
-                    alignSelf: msg.sender === "You" ? "flex-end" : msg.sender === "system" ? "center" : "flex-start",
-                    backgroundColor: msg.sender === "You" ? "#22C55E" : msg.sender === "system" ? "transparent" : "#1e1e1e",
-                    color: msg.sender === "You" ? "#000" : "#E5E7EB",
-                    border: msg.sender === "You" ? "none" : msg.sender === "system" ? "none" : "1px solid #262626"
+                    alignSelf: msg.sender === user?.name ? "flex-end" : msg.sender === "system" ? "center" : "flex-start",
+                    backgroundColor: msg.sender === user?.name ? "#22C55E" : msg.sender === "system" ? "transparent" : "#1e1e1e",
+                    color: msg.sender === user?.name ? "#000" : "#E5E7EB",
+                    border: msg.sender === user?.name ? "none" : msg.sender === "system" ? "none" : "1px solid #262626"
                   }}
                 >
                   {msg.sender !== "system" && <strong style={{ opacity: 0.8 }}>{msg.sender}: </strong>}
                   {msg.text}
                 </div>
               ))}
+              <div ref={chatEndRef} />
             </div>
             <div className="chat-input-area">
-              <input 
-                type="text" 
-                placeholder="Type a message..." 
+              <input
+                type="text"
+                placeholder="Type a message..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSendMessage();
-                }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSendMessage(); }}
               />
               <Button variant="outline" onClick={handleSendMessage}>Send</Button>
             </div>
@@ -262,13 +342,14 @@ export default function DemoInterview({ user, navigateToDashboard }) {
 
         {/* Right Panel: Content Area */}
         <div className="demo-right-panel" style={{ backgroundColor: activeSection === null ? "#121212" : "#0d0d0d" }}>
-          
-          {isSubmitted ? (
+
+          {isSubmitted && !isInterviewer ? (
+            /* ── Score Summary (Candidate only) ── */
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px", overflowY: "auto" }}>
               <div style={{ textAlign: "center", marginBottom: "40px", maxWidth: "600px" }}>
                 <h2 style={{ fontSize: "32px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "16px", color: "#22C55E" }}>Interview Completed!</h2>
                 <p style={{ color: "#9CA3AF", lineHeight: "1.6", fontSize: "16px" }}>
-                  You have successfully submitted your demo interview. Here is your preliminary score based on the automated checks.
+                  You have successfully submitted your demo interview. Here is your preliminary score.
                 </p>
               </div>
 
@@ -277,7 +358,6 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                   <CardTitle style={{ fontSize: "20px" }}>Performance Summary</CardTitle>
                 </CardHeader>
                 <CardContent style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                  {/* MCQ Score */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "16px", borderBottom: "1px solid #333" }}>
                     <div>
                       <h4 style={{ fontWeight: 500, color: "#EDEDED" }}>Conceptual MCQ</h4>
@@ -291,8 +371,6 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                       )}
                     </div>
                   </div>
-
-                  {/* Coding Score */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <h4 style={{ fontWeight: 500, color: "#EDEDED" }}>Live Coding</h4>
@@ -309,19 +387,21 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                 </CardContent>
               </Card>
             </div>
+
           ) : activeSection === null ? (
+            /* ── Section Selection ── */
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px" }}>
               <div style={{ textAlign: "center", marginBottom: "40px", maxWidth: "500px" }}>
                 <h2 style={{ fontSize: "28px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "16px" }}>Interview Workspace</h2>
                 <p style={{ color: "#9CA3AF", lineHeight: "1.6" }}>
-                  {user?.role === "interviewer" 
-                    ? "Welcome to the Demo Interview workspace. As the interviewer, you can monitor the candidate's progress in real-time, view correct answers, and collaboratively edit code."
+                  {isInterviewer
+                    ? "Welcome to the Demo Interview workspace. As the interviewer, you can monitor the candidate's progress in real-time, view correct answers, and observe their code."
                     : "Welcome to the Demo Interview workspace. Your interviewer has opened both a Conceptual MCQ section and a Live Coding section. Which would you like to start with?"}
                 </p>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", width: "100%", maxWidth: "800px" }}>
-                <Card 
+                <Card
                   style={{ backgroundColor: "#1e1e1e", cursor: "pointer", transition: "transform 0.2s, border-color 0.2s", border: "1px solid #333" }}
                   onClick={() => setActiveSection("mcq")}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#D97706"; e.currentTarget.style.transform = "translateY(-4px)"; }}
@@ -334,15 +414,15 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                     <div>
                       <h3 style={{ fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "8px" }}>MCQ Section</h3>
                       <p style={{ color: "#9CA3AF", fontSize: "14px", lineHeight: "1.5" }}>
-                      {user?.role === "interviewer"
-                        ? "View the multiple-choice questions and monitor the candidate's answers."
-                        : "Answer multiple-choice questions to test your theoretical knowledge."}
+                        {isInterviewer
+                          ? "Monitor the candidate's MCQ answers in real-time."
+                          : "Answer multiple-choice questions to test your theoretical knowledge."}
                       </p>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card 
+                <Card
                   style={{ backgroundColor: "#1e1e1e", cursor: "pointer", transition: "transform 0.2s, border-color 0.2s", border: "1px solid #333" }}
                   onClick={() => setActiveSection("coding")}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#22C55E"; e.currentTarget.style.transform = "translateY(-4px)"; }}
@@ -355,16 +435,18 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                     <div>
                       <h3 style={{ fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "8px" }}>Live Coding Section</h3>
                       <p style={{ color: "#9CA3AF", fontSize: "14px", lineHeight: "1.5" }}>
-                      {user?.role === "interviewer"
-                        ? "Collaborate with the candidate on algorithmic problems."
-                        : "Solve algorithmic problems in a collaborative code editor."}
+                        {isInterviewer
+                          ? "Watch the candidate's code in real-time as they solve problems."
+                          : "Solve algorithmic problems in a collaborative code editor."}
                       </p>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
+
           ) : activeSection === "mcq" ? (
+            /* ── MCQ Section ── */
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "32px", overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", paddingBottom: "16px", borderBottom: "1px solid #262626" }}>
                 <h3 style={{ fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif" }}>Conceptual Questions</h3>
@@ -383,63 +465,73 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {MOCK_MCQ_QUESTION.options.map(opt => (
-                    <div 
-                      key={opt.id}
-                      onClick={() => {
-                        if (user?.role !== "interviewer") {
-                          setSelectedMcqOption(opt.id);
-                          setMcqFeedback(null);
-                        }
-                      }}
-                      style={{ 
-                        padding: "16px", 
-                        backgroundColor: user?.role === "interviewer" && opt.id === MOCK_MCQ_QUESTION.correctAnswer 
-                          ? "rgba(34, 197, 94, 0.15)"
-                          : selectedMcqOption === opt.id ? "rgba(217, 119, 6, 0.15)" : "#262626", 
-                        border: user?.role === "interviewer" && opt.id === MOCK_MCQ_QUESTION.correctAnswer
-                          ? "1px solid #22C55E"
-                          : selectedMcqOption === opt.id ? "1px solid #D97706" : "1px solid #333",
-                        borderRadius: "8px",
-                        cursor: user?.role === "interviewer" ? "default" : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        transition: "all 0.2s"
-                      }}
-                    >
-                      <div style={{ 
-                        width: "20px", 
-                        height: "20px", 
-                        borderRadius: "50%", 
-                        border: user?.role === "interviewer" && opt.id === MOCK_MCQ_QUESTION.correctAnswer
-                          ? "5px solid #22C55E"
-                          : selectedMcqOption === opt.id ? "5px solid #D97706" : "2px solid #52525B"
-                      }}></div>
-                      <span>{opt.text}</span>
-                      {user?.role === "interviewer" && opt.id === MOCK_MCQ_QUESTION.correctAnswer && (
-                        <span style={{ marginLeft: "auto", color: "#22C55E", fontSize: "12px", fontWeight: "bold" }}>Correct Answer</span>
-                      )}
-                    </div>
-                  ))}
-                  
+                  {MOCK_MCQ_QUESTION.options.map(opt => {
+                    const isSelected = selectedMcqOption === opt.id;
+                    const isCorrect = opt.id === MOCK_MCQ_QUESTION.correctAnswer;
+
+                    // Interviewer sees: correct answer in green + candidate's selection in orange
+                    // Candidate sees: their own selection in orange
+                    let bgColor = "#262626";
+                    let borderColor = "1px solid #333";
+                    if (isInterviewer && isCorrect) {
+                      bgColor = "rgba(34, 197, 94, 0.15)";
+                      borderColor = "1px solid #22C55E";
+                    } else if (isSelected) {
+                      bgColor = "rgba(217, 119, 6, 0.15)";
+                      borderColor = "1px solid #D97706";
+                    }
+
+                    let radioBorder = "2px solid #52525B";
+                    if (isInterviewer && isCorrect) {
+                      radioBorder = "5px solid #22C55E";
+                    } else if (isSelected) {
+                      radioBorder = "5px solid #D97706";
+                    }
+
+                    return (
+                      <div
+                        key={opt.id}
+                        onClick={() => handleMcqClick(opt.id)}
+                        style={{
+                          padding: "16px",
+                          backgroundColor: bgColor,
+                          border: borderColor,
+                          borderRadius: "8px",
+                          cursor: isInterviewer ? "default" : "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        <div style={{ width: "20px", height: "20px", borderRadius: "50%", border: radioBorder }}></div>
+                        <span>{opt.text}</span>
+                        {/* Interviewer sees both the correct answer label AND the candidate's pick */}
+                        {isInterviewer && isCorrect && (
+                          <span style={{ marginLeft: "auto", color: "#22C55E", fontSize: "12px", fontWeight: "bold" }}>✓ Correct Answer</span>
+                        )}
+                        {isInterviewer && isSelected && !isCorrect && (
+                          <span style={{ marginLeft: "auto", color: "#D97706", fontSize: "12px", fontWeight: "bold" }}>← Candidate Selected</span>
+                        )}
+                      </div>
+                    );
+                  })}
+
                   <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "16px" }}>
-                    {user?.role === "interviewer" ? (
-                      <span style={{ color: "#22C55E", fontWeight: 500, fontSize: "14px" }}>
-                        Waiting for candidate to submit...
+                    {isInterviewer ? (
+                      <span style={{ color: selectedMcqOption ? "#D97706" : "#9CA3AF", fontWeight: 500, fontSize: "14px" }}>
+                        {selectedMcqOption
+                          ? `Candidate selected: Option ${selectedMcqOption}`
+                          : "Waiting for candidate to select an answer..."}
                       </span>
                     ) : (
                       <>
                         {mcqFeedback === "submitted" && (
-                          <span style={{ 
-                            color: "#22C55E", 
-                            fontWeight: 500,
-                            fontSize: "14px"
-                          }}>
+                          <span style={{ color: "#22C55E", fontWeight: 500, fontSize: "14px" }}>
                             Answer recorded successfully!
                           </span>
                         )}
-                        <Button 
+                        <Button
                           onClick={() => setMcqFeedback("submitted")}
                           disabled={!selectedMcqOption || mcqFeedback === "submitted"}
                         >
@@ -451,7 +543,9 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                 </CardContent>
               </Card>
             </div>
+
           ) : activeSection === "coding" ? (
+            /* ── Coding Section ── */
             <>
               <div className="editor-toolbar">
                 <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
@@ -464,39 +558,47 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                       <option value="javascript">JavaScript (Node.js)</option>
                     </select>
                   </div>
-                  <button
-                    className="reset-editor-btn"
-                    onClick={() => setEditorCode(MOCK_CODING_QUESTION.starterCode)}
-                    title="Reset code to boilerplate"
-                  >
-                    <Icon.Refresh />
-                  </button>
+                  {/* Reset button — candidate only */}
+                  {!isInterviewer && (
+                    <button
+                      className="reset-editor-btn"
+                      onClick={() => {
+                        const starter = MOCK_CODING_QUESTION.starterCode;
+                        setEditorCode(starter);
+                        socket.emit("code-update", { interviewId: DEMO_ROOM_ID, code: starter });
+                      }}
+                      title="Reset code to boilerplate"
+                    >
+                      <Icon.Refresh />
+                    </button>
+                  )}
                 </div>
                 <div style={{ display: "flex", gap: "16px" }}>
                   <Button variant="outline" onClick={() => setActiveSection("mcq")} style={{ color: "#D97706", borderColor: "#D97706" }}>
                     Go to MCQ →
                   </Button>
-                  <Button variant="default" className="run-btn" onClick={handleRunCode} disabled={isRunning}>
-                    <Icon.Play /> {isRunning ? "Running..." : "Run Code"}
-                  </Button>
+                  {/* Run button — candidate only */}
+                  {!isInterviewer && (
+                    <Button variant="default" className="run-btn" onClick={handleRunCode} disabled={isRunning}>
+                      <Icon.Play /> {isRunning ? "Running..." : "Run Code"}
+                    </Button>
+                  )}
                 </div>
               </div>
-              
+
               <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-                {/* Problem Description Panel */}
+                {/* Problem Description */}
                 <div style={{ width: "35%", minWidth: "300px", borderRight: "1px solid #262626", backgroundColor: "#121212", padding: "24px", overflowY: "auto" }}>
                   <h3 style={{ fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "16px" }}>{MOCK_CODING_QUESTION.title}</h3>
                   <div style={{ color: "#D1D5DB", fontSize: "14px", lineHeight: "1.6", whiteSpace: "pre-wrap" }}>
                     {MOCK_CODING_QUESTION.description}
                   </div>
-                  
                   {MOCK_CODING_QUESTION.sampleInput && (
                     <div style={{ marginTop: "24px" }}>
                       <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#EDEDED", marginBottom: "8px" }}>Sample Input:</h4>
                       <pre className="io-sample-block">{MOCK_CODING_QUESTION.sampleInput}</pre>
                     </div>
                   )}
-
                   {MOCK_CODING_QUESTION.sampleOutput && (
                     <div style={{ marginTop: "20px" }}>
                       <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#EDEDED", marginBottom: "8px" }}>Sample Output:</h4>
@@ -505,6 +607,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                   )}
                 </div>
 
+                {/* Code Editor + Terminal */}
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                   <div className="demo-editor-wrapper">
                     <Editor
@@ -512,12 +615,13 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                       defaultLanguage="javascript"
                       theme="vs-dark"
                       value={editorCode}
-                      onChange={(v) => setEditorCode(v)}
+                      onChange={handleCodeChange}
                       options={{
                         fontSize: 14,
                         minimap: { enabled: false },
                         scrollbar: { vertical: "visible", horizontal: "visible" },
-                        padding: { top: 16 }
+                        padding: { top: 16 },
+                        readOnly: isInterviewer  // Interviewer can only watch
                       }}
                     />
                   </div>

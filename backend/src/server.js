@@ -64,6 +64,10 @@ io.on("connection", (socket) => {
         socket.to(interviewId).emit("code-update", code);
     });
 
+    socket.on("mcq-select", ({ interviewId, optionId }) => {
+        socket.to(interviewId).emit("mcq-select", optionId);
+    });
+
     socket.on("disconnect", () => {
         console.log("User disconnected:", socket.id);
     });
