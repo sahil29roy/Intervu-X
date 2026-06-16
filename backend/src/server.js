@@ -14,9 +14,29 @@ import { redis } from "./lib/redis.js"
 const app = express()
 const httpServer = createServer(app)
 
+const allowedOrigins = [
+    ENV.CLIENT_URL,
+    "https://intervu-x.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000"
+].filter(Boolean);
+
+const isOriginAllowed = (origin) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    if (origin.endsWith(".vercel.app")) return true;
+    return false;
+};
+
 const io = new Server(httpServer, {
     cors: {
-        origin: ENV.CLIENT_URL || "*",
+        origin: (origin, callback) => {
+            if (isOriginAllowed(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
         methods: ["GET", "POST"]
     }
 })
@@ -26,7 +46,13 @@ const __dirname = path.resolve();
 // Middlewares
 app.use(express.json());
 app.use(cors({
-    origin: ENV.CLIENT_URL || "*",
+    origin: (origin, callback) => {
+        if (isOriginAllowed(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true
 }));
 

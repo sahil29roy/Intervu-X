@@ -6,8 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { io } from "socket.io-client";
 
-// Connect to the current host (handled by Vite proxy in dev)
-const socket = io();
+// Connect to the current host in development, or Render backend in production
+const socket = io(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? undefined : "https://intervu-x.onrender.com");
 const ICE_SERVERS = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
 // ── Icons ──
