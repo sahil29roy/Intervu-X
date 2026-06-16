@@ -3,6 +3,9 @@ import Editor from "@monaco-editor/react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:5000");
 
 const Icon = {
   Video: () => (
@@ -82,8 +85,8 @@ const MOCK_MCQ_QUESTION = {
   correctAnswer: "B"
 };
 
-export default function DemoInterview({ user, navigateToDashboard }) {
-  const [activeSection, setActiveSection] = useState(null); // null | 'mcq' | 'coding'
+export default function LiveInterview({ user, navigateToDashboard, interviewId }) {
+  const [activeSection, setActiveSection] = useState(null); // null = menu, "mcq", "coding"
   
   const [editorCode, setEditorCode] = useState(MOCK_CODING_QUESTION.starterCode);
   const [output, setOutput] = useState("");
@@ -98,10 +101,39 @@ export default function DemoInterview({ user, navigateToDashboard }) {
 
   // Chat State
   const [messages, setMessages] = useState([
-    { id: 1, sender: "system", text: "Session started. Recording is off for demo." },
-    { id: 2, sender: user?.role === "interviewer" ? "Candidate" : "Interviewer", text: user?.role === "interviewer" ? "Hello! I am ready for the interview." : "Hello test user, let's start with a simple JavaScript exercise or some conceptual questions." }
+    { id: 1, sender: "system", text: "Session started. This is a live interview environment." },
+    { id: 2, sender: user?.role === "interviewer" ? "Candidate" : "Interviewer", text: user?.role === "interviewer" ? "Hello! I am ready to begin." : "Hello! Let's get started whenever you are ready." }
   ]);
   const [chatInput, setChatInput] = useState("");
+
+  // Socket setup
+  useEffect(() => {
+    if (!interviewId) return;
+    
+    socket.emit("join-interview", interviewId);
+
+    const handleMessage = (msg) => {
+      setMessages(prev => [...prev, msg]);
+    };
+
+    const handleCodeUpdate = (code) => {
+      setEditorCode(prev => prev !== code ? code : prev);
+    };
+
+    const handleMcqSelect = (optionId) => {
+      setSelectedMcqOption(optionId);
+    };
+
+    socket.on("chat-message", handleMessage);
+    socket.on("code-update", handleCodeUpdate);
+    socket.on("mcq-select", handleMcqSelect);
+
+    return () => {
+      socket.off("chat-message", handleMessage);
+      socket.off("code-update", handleCodeUpdate);
+      socket.off("mcq-select", handleMcqSelect);
+    };
+  }, [interviewId]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -118,7 +150,13 @@ export default function DemoInterview({ user, navigateToDashboard }) {
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    setMessages(prev => [...prev, { id: Date.now(), sender: "You", text: chatInput.trim() }]);
+    const newMessage = { 
+      id: Date.now(), 
+      sender: user?.name || (user?.role === "interviewer" ? "Interviewer" : "Candidate"), 
+      text: chatInput 
+    };
+    setMessages([...messages, newMessage]);
+    socket.emit("chat-message", { interviewId, message: newMessage });
     setChatInput("");
   };
 
@@ -167,10 +205,11 @@ export default function DemoInterview({ user, navigateToDashboard }) {
       {/* Top Header */}
       <div className="demo-header">
         <div className="demo-header-left">
-          <Button variant="outline" onClick={navigateToDashboard}>Exit Demo</Button>
+          <Button variant="outline" onClick={navigateToDashboard}>Exit Interview</Button>
           <div className="demo-title">
-            <h2>Mock Technical Interview</h2>
-            <span className="demo-badge">LIVE DEMO</span>
+            <span className="brand-dot"></span>
+            <span className="header-title">Live Interview</span>
+            {interviewId && <span className="header-subtitle" style={{ marginLeft: "12px", color: "#9CA3AF" }}>Session ID: {interviewId}</span>}
           </div>
         </div>
         <div className="demo-header-right">
@@ -199,7 +238,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
             <div className="video-box interviewer-video">
               <div className="video-placeholder">
                 <Icon.Video />
-                <span>{user?.role === "interviewer" ? "Candidate Feed (Simulated)" : "Interviewer Feed (Simulated)"}</span>
+                <span>{user?.role === "interviewer" ? "Candidate Feed (Waiting...)" : "Interviewer Feed (Waiting...)"}</span>
               </div>
               <div className="video-footer">
                 <span>{user?.role === "interviewer" ? "Candidate" : "Interviewer"}</span>
@@ -207,7 +246,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
               </div>
             </div>
 
-            {/* Candidate Video Mock */}
+            {/* My Video */}
             <div className="video-box candidate-video">
               <div className="video-placeholder">
                 {user?.profilePicture ? (
@@ -234,10 +273,10 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                   key={msg.id} 
                   className={`chat-msg ${msg.sender === "system" ? "system" : "received"}`}
                   style={{
-                    alignSelf: msg.sender === "You" ? "flex-end" : msg.sender === "system" ? "center" : "flex-start",
-                    backgroundColor: msg.sender === "You" ? "#22C55E" : msg.sender === "system" ? "transparent" : "#1e1e1e",
-                    color: msg.sender === "You" ? "#000" : "#E5E7EB",
-                    border: msg.sender === "You" ? "none" : msg.sender === "system" ? "none" : "1px solid #262626"
+                    alignSelf: msg.sender === "You" || msg.sender === user?.name ? "flex-end" : msg.sender === "system" ? "center" : "flex-start",
+                    backgroundColor: msg.sender === "You" || msg.sender === user?.name ? "#22C55E" : msg.sender === "system" ? "transparent" : "#1e1e1e",
+                    color: msg.sender === "You" || msg.sender === user?.name ? "#000" : "#E5E7EB",
+                    border: msg.sender === "You" || msg.sender === user?.name ? "none" : msg.sender === "system" ? "none" : "1px solid #262626"
                   }}
                 >
                   {msg.sender !== "system" && <strong style={{ opacity: 0.8 }}>{msg.sender}: </strong>}
@@ -315,8 +354,8 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                 <h2 style={{ fontSize: "28px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "16px" }}>Interview Workspace</h2>
                 <p style={{ color: "#9CA3AF", lineHeight: "1.6" }}>
                   {user?.role === "interviewer" 
-                    ? "Welcome to the Demo Interview workspace. As the interviewer, you can monitor the candidate's progress in real-time, view correct answers, and collaboratively edit code."
-                    : "Welcome to the Demo Interview workspace. Your interviewer has opened both a Conceptual MCQ section and a Live Coding section. Which would you like to start with?"}
+                    ? "Welcome to the Live Interview workspace. As the interviewer, you can monitor the candidate's progress in real-time, view correct answers, and collaboratively edit code."
+                    : "Welcome to the Live Interview workspace. Your interviewer has opened both a Conceptual MCQ section and a Live Coding section. Which would you like to start with?"}
                 </p>
               </div>
 
@@ -337,7 +376,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                       {user?.role === "interviewer"
                         ? "View the multiple-choice questions and monitor the candidate's answers."
                         : "Answer multiple-choice questions to test your theoretical knowledge."}
-                      </p>
+                    </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -358,7 +397,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                       {user?.role === "interviewer"
                         ? "Collaborate with the candidate on algorithmic problems."
                         : "Solve algorithmic problems in a collaborative code editor."}
-                      </p>
+                    </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -390,6 +429,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                         if (user?.role !== "interviewer") {
                           setSelectedMcqOption(opt.id);
                           setMcqFeedback(null);
+                          socket.emit("mcq-select", { interviewId, optionId: opt.id });
                         }
                       }}
                       style={{ 
@@ -512,7 +552,10 @@ export default function DemoInterview({ user, navigateToDashboard }) {
                       defaultLanguage="javascript"
                       theme="vs-dark"
                       value={editorCode}
-                      onChange={(v) => setEditorCode(v)}
+                      onChange={(val) => {
+                        setEditorCode(val);
+                        socket.emit("code-update", { interviewId, code: val });
+                      }}
                       options={{
                         fontSize: 14,
                         minimap: { enabled: false },

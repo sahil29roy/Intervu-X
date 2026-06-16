@@ -12,10 +12,13 @@ import { MCQTestCandidateView, MCQTestAdminView } from "./McqSystem"
 import CodingSandbox from "./CodingSandbox"
 import LocalIDE from "./LocalIDE"
 import DemoInterview from "./DemoInterview"
+import InterviewsList from "./InterviewsList"
+import LiveInterview from "./LiveInterview"
 
 export default function Dashboard({ user, onLogout }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeNav, setActiveNav] = useState("dashboard")
+  const [activeInterviewId, setActiveInterviewId] = useState(null)
 
   const [dashboardData, setDashboardData] = useState({
     interviews: [],
@@ -348,31 +351,25 @@ export default function Dashboard({ user, onLogout }) {
           )}
 
           {activeNav === "interviews" && (
-            <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
-              <CardHeader>
-                <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>
-                  Interviews
-                </CardTitle>
-                <CardDescription>This section is currently under active development.</CardDescription>
-              </CardHeader>
-              <CardContent style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", marginTop: "16px" }}>
-                <p style={{ color: "#9CA3AF" }}>
-                  You are viewing the Interviews page. The full live interview scheduling and management system is coming soon. 
-                  In the meantime, you can explore the fully functional <strong>Demo Interview</strong> environment!
-                </p>
-                <div style={{ display: "flex", gap: "16px" }}>
-                  <Button variant="outline" onClick={() => setActiveNav("dashboard")} style={{ width: "auto" }}>
-                    Back to Dashboard
-                  </Button>
-                  <Button onClick={() => setActiveNav("demo_interview")} style={{ width: "auto" }}>
-                    Launch Demo Interview
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <InterviewsList 
+              user={user} 
+              navigateToDashboard={() => setActiveNav("dashboard")}
+              onJoinInterview={(id) => {
+                setActiveInterviewId(id);
+                setActiveNav("live_interview");
+              }}
+            />
           )}
 
-          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && activeNav !== "interviews" && (
+          {activeNav === "live_interview" && (
+            <LiveInterview
+              user={user}
+              interviewId={activeInterviewId}
+              navigateToDashboard={() => setActiveNav("dashboard")}
+            />
+          )}
+
+          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && activeNav !== "interviews" && activeNav !== "live_interview" && (
             <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
               <CardHeader>
                 <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>

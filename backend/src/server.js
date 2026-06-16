@@ -1,6 +1,8 @@
 import express from "express"
 import path from "path"
 import cors from "cors"
+import { createServer } from "http"
+import { Server } from "socket.io"
 import { ENV } from "./lib/env.js"
 import { connectDB } from "./lib/db.js"
 import authRoutes from "./routes/authRoutes.js"
@@ -9,7 +11,15 @@ import testRoutes from "./routes/testRoutes.js"
 import codingRoutes from "./routes/codingRoutes.js"
 import { redis } from "./lib/redis.js"
 
-const app = new express()
+const app = express()
+const httpServer = createServer(app)
+
+const io = new Server(httpServer, {
+    cors: {
+        origin: ENV.CLIENT_URL || "*",
+        methods: ["GET", "POST"]
+    }
+})
 
 const __dirname = path.resolve();
 
@@ -37,10 +47,32 @@ app.get("/books", (req, res) => {
     res.status(200).json({ msg: "this is books endpoint" })
 })
 
+// Socket.io Real-time Logic
+io.on("connection", (socket) => {
+    console.log("A user connected:", socket.id);
+
+    socket.on("join-interview", (interviewId) => {
+        socket.join(interviewId);
+        console.log(`Socket ${socket.id} joined interview room ${interviewId}`);
+    });
+
+    socket.on("chat-message", ({ interviewId, message }) => {
+        socket.to(interviewId).emit("chat-message", message);
+    });
+
+    socket.on("code-update", ({ interviewId, code }) => {
+        socket.to(interviewId).emit("code-update", code);
+    });
+
+    socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
+    });
+});
+
 const startServer = async () => {
     try {
         await connectDB();
-        app.listen(ENV.PORT, () => {
+        httpServer.listen(ENV.PORT, () => {
             console.log("server is running on port ", ENV.PORT)
         });
     } catch (err) {
