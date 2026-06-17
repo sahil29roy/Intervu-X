@@ -586,6 +586,11 @@ export default function CodingSandbox({ user, navigateToDashboard, initialSelect
                       </span>
                     )}
                     <h3 className="problem-row-title">{prob.title}</h3>
+                    {solved && (
+                      <Badge variant="teal" style={{ backgroundColor: "rgba(34, 197, 94, 0.15)", color: "#22C55E", border: "1px solid #22C55E", fontSize: "11px", padding: "2px 6px" }}>
+                        Solved
+                      </Badge>
+                    )}
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
                     {prob.tags.slice(0, 3).map((tag, idx) => (

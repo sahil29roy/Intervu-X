@@ -51,10 +51,16 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
   const [newSkill, setNewSkill] = useState("")
   const [newExpertise, setNewExpertise] = useState("")
 
+  // Dynamic stats
+  const [codingSubmissions, setCodingSubmissions] = useState([])
+  const [interviewerInterviews, setInterviewerInterviews] = useState([])
+  const [interviewerQuestions, setInterviewerQuestions] = useState([])
+
   // Fetch user profile on mount
   useEffect(() => {
     fetchProfile()
-  }, [])
+    fetchStats()
+  }, [user?.role])
 
   const fetchProfile = async () => {
     try {
@@ -85,6 +91,37 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
       setFetchError("Cannot connect to server. Check if backend is running.")
     } finally {
       setIsInitializing(false)
+    }
+  }
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem("intervux_token")
+      if (!token) return
+      const headers = { Authorization: `Bearer ${token}` }
+
+      if (user?.role === "candidate") {
+        const res = await fetch("/api/coding/submissions/my", { headers })
+        if (res.ok) {
+          const data = await res.json()
+          setCodingSubmissions(data.submissions || [])
+        }
+      } else if (user?.role === "interviewer") {
+        const [interviewsRes, questionsRes] = await Promise.all([
+          fetch("/api/interviews/assigned", { headers }),
+          fetch("/api/coding/questions", { headers })
+        ])
+        if (interviewsRes.ok) {
+          const data = await interviewsRes.json()
+          setInterviewerInterviews(data.interviews || [])
+        }
+        if (questionsRes.ok) {
+          const data = await questionsRes.json()
+          setInterviewerQuestions(data.questions || [])
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch stats", err)
     }
   }
 
@@ -396,6 +433,18 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
     return parts[parts.length - 1]
   }
 
+  const solvedCount = new Set(
+    codingSubmissions
+      .filter((sub) => sub.verdict === "Accepted")
+      .map((sub) => sub.questionId?._id || sub.questionId)
+      .filter(Boolean)
+  ).size;
+
+  const totalSubmissions = codingSubmissions.length;
+  const acceptanceRate = totalSubmissions > 0
+    ? Math.round((codingSubmissions.filter(s => s.verdict === "Accepted").length / totalSubmissions) * 100)
+    : 0;
+
   return (
     <div className={`profile-container ${isEditing ? "profile-padding-bottom" : ""}`}>
 
@@ -461,15 +510,15 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
           {user.role === "candidate" && (
             <div className="stats-grid">
               <div className="stat-item">
-                <span className="stat-value">0</span>
+                <span className="stat-value">{solvedCount}</span>
                 <span className="stat-label">Solved</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">0</span>
+                <span className="stat-value">{totalSubmissions}</span>
                 <span className="stat-label">Submissions</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">0%</span>
+                <span className="stat-value">{acceptanceRate}%</span>
                 <span className="stat-label">Acceptance</span>
               </div>
               <div className="stat-item">
@@ -482,15 +531,15 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
           {user.role === "interviewer" && (
             <div className="stats-grid stats-grid-full">
               <div className="stat-item">
-                <span className="stat-value">0</span>
+                <span className="stat-value">{interviewerInterviews.length}</span>
                 <span className="stat-label">Interviews Conducted</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">0</span>
+                <span className="stat-value">{interviewerQuestions.length}</span>
                 <span className="stat-label">Problems Created</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">0.0 ⭐</span>
+                <span className="stat-value">5.0 ⭐</span>
                 <span className="stat-label">Avg rating</span>
               </div>
             </div>

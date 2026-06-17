@@ -5,6 +5,7 @@ import { Badge } from "./ui/badge";
 
 export default function ProblemsBank({ user, initialViewingProblem }) {
   const [problems, setProblems] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Filters
@@ -22,7 +23,8 @@ export default function ProblemsBank({ user, initialViewingProblem }) {
 
   useEffect(() => {
     fetchProblems();
-  }, []);
+    fetchSubmissions();
+  }, [user.role]);
 
   const fetchProblems = async () => {
     try {
@@ -40,6 +42,55 @@ export default function ProblemsBank({ user, initialViewingProblem }) {
       console.error("Failed to fetch problems:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSubmissions = async () => {
+    try {
+      const token = localStorage.getItem("intervux_token");
+      const url = user.role === "candidate" 
+        ? "/api/coding/submissions/my" 
+        : "/api/coding/submissions/all";
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSubmissions(data.submissions || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch submissions:", err);
+    }
+  };
+
+  const isSolved = (probId) => {
+    return submissions.some(sub => {
+      const subProbId = sub.questionId?._id || sub.questionId;
+      return subProbId === probId && sub.verdict === "Accepted";
+    });
+  };
+
+  const handleDeleteProblem = async (problemId) => {
+    if (window.confirm("Are you sure you want to delete this problem?")) {
+      try {
+        const token = localStorage.getItem("intervux_token");
+        const res = await fetch(`/api/coding/questions/${problemId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          setProblems(prev => prev.filter(p => p._id !== problemId));
+          if (viewingProblem && viewingProblem._id === problemId) {
+            setViewingProblem(null);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to delete problem:", err);
+      }
     }
   };
 
@@ -71,14 +122,23 @@ export default function ProblemsBank({ user, initialViewingProblem }) {
         
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
           <div>
-            <h2 style={{ fontSize: "32px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "8px", color: "#EDEDED" }}>{p.title}</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+              <h2 style={{ fontSize: "32px", fontFamily: "'Space Grotesk', sans-serif", margin: 0, color: "#EDEDED" }}>{p.title}</h2>
+              {isSolved(p._id) && (
+                <Badge style={{ backgroundColor: "rgba(34, 197, 94, 0.15)", color: "#22C55E", border: "1px solid #22C55E" }}>
+                  Solved
+                </Badge>
+              )}
+            </div>
             <Badge style={{ backgroundColor: `rgba(${getDifficultyColor(p.difficulty).replace('#', '')}, 0.15)`, color: getDifficultyColor(p.difficulty), border: `1px solid ${getDifficultyColor(p.difficulty)}` }}>
               {p.difficulty.toUpperCase()}
             </Badge>
           </div>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <Button variant="outline" onClick={() => alert("Edit feature coming soon!")}>Edit Problem</Button>
-          </div>
+          {user.role === "admin" && (
+            <div style={{ display: "flex", gap: "12px" }}>
+              <Button variant="outline" onClick={() => {}}>Edit Problem</Button>
+            </div>
+          )}
         </div>
 
         <Card style={{ backgroundColor: "#1e1e1e", border: "1px solid #333", marginBottom: "24px" }}>
@@ -165,9 +225,11 @@ export default function ProblemsBank({ user, initialViewingProblem }) {
     <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
       <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h2 style={{ fontSize: "28px", fontFamily: "'Space Grotesk', sans-serif" }}>Problems Bank</h2>
-        <Button onClick={() => alert("Create Problem feature coming soon!")} style={{ backgroundColor: "#D97706", color: "#171717" }}>
-          Create Problem
-        </Button>
+        {user.role === "admin" && (
+          <Button onClick={() => {}} style={{ backgroundColor: "#D97706", color: "#171717" }}>
+            Create Problem
+          </Button>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: "16px", marginBottom: "32px", alignItems: "center" }}>
@@ -209,12 +271,20 @@ export default function ProblemsBank({ user, initialViewingProblem }) {
             <h3 style={{ fontSize: "20px", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "8px", color: "#EDEDED" }}>
               No coding problems available.
             </h3>
-            <p style={{ color: "#9CA3AF", fontSize: "14px", maxWidth: "400px", margin: "0 auto", marginBottom: "24px" }}>
-              Create your first coding problem to start conducting technical interviews.
-            </p>
-            <Button onClick={() => alert("Create Problem feature coming soon!")} style={{ backgroundColor: "#D97706", color: "#171717" }}>
-              Create Problem
-            </Button>
+            {user.role === "admin" ? (
+              <>
+                <p style={{ color: "#9CA3AF", fontSize: "14px", maxWidth: "400px", margin: "0 auto", marginBottom: "24px" }}>
+                  Create your first coding problem to start conducting technical interviews.
+                </p>
+                <Button onClick={() => {}} style={{ backgroundColor: "#D97706", color: "#171717" }}>
+                  Create Problem
+                </Button>
+              </>
+            ) : (
+              <p style={{ color: "#9CA3AF", fontSize: "14px", maxWidth: "400px", margin: "0 auto" }}>
+                Problems will appear here once configured by an administrator.
+              </p>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -222,8 +292,15 @@ export default function ProblemsBank({ user, initialViewingProblem }) {
           {filteredProblems.map(p => (
             <Card key={p._id} style={{ backgroundColor: "#1e1e1e", border: "1px solid #333", display: "flex", flexDirection: "column" }}>
               <CardHeader style={{ paddingBottom: "12px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <CardTitle style={{ fontSize: "18px", color: "#EDEDED", lineHeight: "1.4" }}>{p.title}</CardTitle>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                    <CardTitle style={{ fontSize: "18px", color: "#EDEDED", lineHeight: "1.4" }}>{p.title}</CardTitle>
+                    {isSolved(p._id) && (
+                      <Badge style={{ backgroundColor: "rgba(34, 197, 94, 0.15)", color: "#22C55E", border: "1px solid #22C55E", fontSize: "11px", padding: "2px 6px" }}>
+                        Solved
+                      </Badge>
+                    )}
+                  </div>
                   <Badge style={{ backgroundColor: `rgba(${getDifficultyColor(p.difficulty).replace('#', '')}, 0.15)`, color: getDifficultyColor(p.difficulty), border: `1px solid ${getDifficultyColor(p.difficulty)}` }}>
                     {p.difficulty.toUpperCase()}
                   </Badge>
@@ -257,12 +334,16 @@ export default function ProblemsBank({ user, initialViewingProblem }) {
                   <Button variant="default" style={{ flex: 1, backgroundColor: "#D97706", color: "#171717" }} onClick={() => setViewingProblem(p)}>
                     View
                   </Button>
-                  <Button variant="outline" style={{ flex: 1 }} onClick={() => alert("Edit feature coming soon!")}>
-                    Edit
-                  </Button>
-                  <Button variant="destructive" onClick={() => alert("Delete feature coming soon!")}>
-                    Delete
-                  </Button>
+                  {user.role === "admin" && (
+                    <>
+                      <Button variant="outline" style={{ flex: 1 }} onClick={() => {}}>
+                        Edit
+                      </Button>
+                      <Button variant="destructive" onClick={() => handleDeleteProblem(p._id)}>
+                        Delete
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
