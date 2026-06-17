@@ -801,7 +801,6 @@ async function seedDB() {
     await mongoose.connect(ENV.DB_URL);
     console.log("Connected to MongoDB.");
 
-    // --- SEED OPERATING SYSTEMS TEST ---
     const osTestTitle = "Operating Systems Mock Test";
     const existingOsTest = await McqTest.findOne({ title: osTestTitle });
     if (existingOsTest) {
@@ -832,7 +831,6 @@ async function seedDB() {
     const insertedOsQuestions = await Question.insertMany(osQuestionsToInsert);
     console.log(`Successfully seeded ${insertedOsQuestions.length} OS questions.`);
 
-    // --- SEED OOPS TEST ---
     const oopsTestTitle = "Object-Oriented Programming (OOP) Mock Test";
     const existingOopsTest = await McqTest.findOne({ title: oopsTestTitle });
     if (existingOopsTest) {
@@ -863,7 +861,6 @@ async function seedDB() {
     const insertedOopsQuestions = await Question.insertMany(oopsQuestionsToInsert);
     console.log(`Successfully seeded ${insertedOopsQuestions.length} OOPS questions.`);
 
-    // --- SEED CN TEST ---
     const cnTestTitle = "Computer Networks (CN) Mock Test";
     const existingCnTest = await McqTest.findOne({ title: cnTestTitle });
     if (existingCnTest) {
@@ -894,7 +891,6 @@ async function seedDB() {
     const insertedCnQuestions = await Question.insertMany(cnQuestionsToInsert);
     console.log(`Successfully seeded ${insertedCnQuestions.length} CN questions.`);
 
-    // --- SEED DSA TEST ---
     const dsaTestTitle = "Data Structures and Algorithms (DSA) Mock Test";
     const existingDsaTest = await McqTest.findOne({ title: dsaTestTitle });
     if (existingDsaTest) {
@@ -925,7 +921,6 @@ async function seedDB() {
     const insertedDsaQuestions = await Question.insertMany(dsaQuestionsToInsert);
     console.log(`Successfully seeded ${insertedDsaQuestions.length} DSA questions.`);
 
-    // --- SEED APTITUDE TEST ---
     const aptitudeTestTitle = "Quantitative Aptitude Mock Test";
     const existingAptitudeTest = await McqTest.findOne({ title: aptitudeTestTitle });
     if (existingAptitudeTest) {
@@ -956,7 +951,6 @@ async function seedDB() {
     const insertedAptitudeQuestions = await Question.insertMany(aptitudeQuestionsToInsert);
     console.log(`Successfully seeded ${insertedAptitudeQuestions.length} Aptitude questions.`);
 
-    // --- SEED JAVASCRIPT TEST ---
     const jsTestTitle = "JavaScript Programming Mock Test";
     const existingJsTest = await McqTest.findOne({ title: jsTestTitle });
     if (existingJsTest) {

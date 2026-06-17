@@ -1339,9 +1339,9 @@ export default function ProfilePage({ onLogout, navigateToDashboard }) {
 
       </div>
 
-      {/* ========================================== */}
+
       {/* STICKY BOTTOM EDIT CONTROLS BAR            */}
-      {/* ========================================== */}
+
       {isEditing && (
         <div className="edit-mode-bar animate-fadeIn">
           <div className="edit-mode-bar-content">

@@ -4,6 +4,7 @@ import McqTest from "../models/McqTest.js";
 import Question from "../models/Question.js";
 import TestAttempt from "../models/TestAttempt.js";
 import User from "../models/User.js";
+import { createNotification } from "./notificationController.js";
 
 // Zod validation schemas
 const createTestSchema = z.object({
@@ -24,7 +25,7 @@ const addQuestionSchema = z.object({
     subject: z.string().min(1, "Subject is required")
 });
 
-// POST /api/tests (Admin only)
+// POST /api/tests (Admin )
 export const createTest = async (req, res) => {
     try {
         const parsed = createTestSchema.safeParse(req.body);
@@ -57,7 +58,7 @@ export const createTest = async (req, res) => {
     }
 };
 
-// POST /api/tests/:id/questions (Admin only)
+// POST /api/tests/:id/questions (Admin )
 export const addQuestionToTest = async (req, res) => {
     try {
         const testId = req.params.id;
@@ -128,7 +129,6 @@ export const getTests = async (req, res) => {
 };
 
 // GET /api/tests/:id (Admins & Candidates)
-// Note: Candidates do NOT get correctAnswer or explanation fields in the questions list.
 export const getTestById = async (req, res) => {
     try {
         const testId = req.params.id;
@@ -194,7 +194,7 @@ export const submitTestAttempt = async (req, res) => {
                 if (isCorrect) correctCount++;
                 else wrongCount++;
             } else {
-                // Not answered is counted as wrong/unanswered
+
                 wrongCount++;
             }
 
@@ -209,7 +209,6 @@ export const submitTestAttempt = async (req, res) => {
             };
         });
 
-        // 1 mark per question
         const score = correctCount;
         const totalQuestions = questions.length;
 
@@ -223,6 +222,15 @@ export const submitTestAttempt = async (req, res) => {
             submittedAt: new Date()
         });
 
+        // Trigger notification for candidate
+        await createNotification(
+            req.user._id,
+            "MCQ Test Submitted",
+            `You submitted your attempt for "${test.title}" test with a score of ${score}/${totalQuestions}.`,
+            "test_submitted",
+            "/tests"
+        );
+
         return res.status(201).json({
             message: "Test submitted successfully",
             attempt: testAttempt,
@@ -235,7 +243,7 @@ export const submitTestAttempt = async (req, res) => {
     }
 };
 
-// GET /api/tests/my-attempts (Candidate only)
+// GET /api/tests/my-attempts (Candidate)
 export const getMyAttempts = async (req, res) => {
     try {
         const attempts = await TestAttempt.find({ candidateId: req.user._id })
@@ -249,7 +257,7 @@ export const getMyAttempts = async (req, res) => {
     }
 };
 
-// GET /api/tests/attempts/all (Admin only)
+// GET /api/tests/attempts/all (Admin)
 export const getAllAttempts = async (req, res) => {
     try {
         const attempts = await TestAttempt.find({})

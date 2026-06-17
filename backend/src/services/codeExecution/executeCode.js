@@ -45,8 +45,7 @@ const checkDockerAvailability = () => {
 };
 
 /*
- -Main execution service to run candidate code in safe sandbox containers or local fallback.
- - Supported languages: javascript
+ Main execution service to run candidate code in safe sandbox containers or local fallback.
  */
 export const executeCode = async (language, sourceCode, inputCase) => {
   if (language.toLowerCase() !== "javascript") {

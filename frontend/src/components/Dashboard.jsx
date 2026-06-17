@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
+import { io } from "socket.io-client"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
@@ -28,6 +29,132 @@ export default function Dashboard({ user, onLogout }) {
     codingSubmissions: []
   })
   const [loadingDashboard, setLoadingDashboard] = useState(false)
+
+  const [notifications, setNotifications] = useState([])
+  const [showNotifications, setShowNotifications] = useState(false)
+  const dropdownRef = useRef(null)
+
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem("intervux_token")
+      const res = await fetch("/api/notifications", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setNotifications(data.notifications || [])
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications", err)
+    }
+  }
+
+  // Handle Mark Single Notification as Read
+  const handleMarkAsRead = async (id) => {
+    try {
+      const token = localStorage.getItem("intervux_token")
+      const res = await fetch(`/api/notifications/${id}/read`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n))
+      }
+    } catch (err) {
+      console.error("Failed to mark notification as read", err)
+    }
+  }
+
+  // Handle Mark All as Read
+  const handleMarkAllAsRead = async () => {
+    try {
+      const token = localStorage.getItem("intervux_token")
+      const res = await fetch("/api/notifications/read-all", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+      }
+    } catch (err) {
+      console.error("Failed to mark all notifications as read", err)
+    }
+  }
+
+  // Handle Notification Click / Navigation
+  const handleNotificationClick = (notification) => {
+    handleMarkAsRead(notification._id)
+    setShowNotifications(false)
+    if (notification.link) {
+      const navId = notification.link.replace("/", "")
+      if (navId) {
+        handleNavClick(navId)
+      }
+    }
+  }
+
+  // Socket Connection and Click-Outside Listeners
+  useEffect(() => {
+    fetchNotifications()
+
+    // Real-time socket configuration for notifications
+    const socket = io(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? undefined : "https://intervu-x.onrender.com");
+    
+    socket.emit("register-user", user._id)
+
+    socket.on("notification-received", (newNotification) => {
+      setNotifications(prev => [newNotification, ...prev])
+    })
+
+    const handleOutsideClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick)
+
+    return () => {
+      socket.disconnect()
+      document.removeEventListener("mousedown", handleOutsideClick)
+    }
+  }, [user._id])
+
+  // Helper: Format Time Ago
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const seconds = Math.floor((now - date) / 1000)
+    
+    if (seconds < 60) return "Just now"
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    if (days === 1) return "Yesterday"
+    if (days < 7) return `${days}d ago`
+    
+    return date.toLocaleDateString()
+  }
+
+  // Helper: Select appropriate icon
+  const getNotificationIcon = (type) => {
+    switch(type) {
+      case "interview_scheduled":
+        return <Icon.Interviews />;
+      case "feedback_submitted":
+        return <Icon.ShieldAlert />;
+      case "test_submitted":
+        return <Icon.Tests />;
+      case "coding_attempt":
+        return <Icon.Coding />;
+      default:
+        return <Icon.Bell />;
+    }
+  }
+
+  const unreadCount = notifications.filter(n => !n.isRead).length
 
   useEffect(() => {
     if (user.role === "candidate" && activeNav === "dashboard") {
@@ -289,10 +416,62 @@ export default function Dashboard({ user, onLogout }) {
           </div>
 
           <div className="navbar-right">
-            <button className="navbar-notification-btn" aria-label="Notifications">
-              <Icon.Bell />
-              <span className="navbar-notification-dot" />
-            </button>
+            <div className="notifications-dropdown-container" ref={dropdownRef}>
+              <button 
+                className="navbar-notification-btn" 
+                aria-label="Notifications"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
+                <Icon.Bell />
+                {unreadCount > 0 && (
+                  <span className="navbar-notification-badge">{unreadCount}</span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="notifications-dropdown">
+                  <div className="notifications-header">
+                    <h3 className="notifications-title">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button 
+                        className="notifications-mark-read-btn"
+                        onClick={handleMarkAllAsRead}
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  <div className="notifications-list">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div 
+                          key={n._id} 
+                          className={`notification-item ${!n.isRead ? 'unread' : ''}`}
+                          onClick={() => handleNotificationClick(n)}
+                        >
+                          <div className="notification-icon-container">
+                            {getNotificationIcon(n.type)}
+                          </div>
+                          <div className="notification-content-wrapper">
+                            <span className="notification-item-title">{n.title}</span>
+                            <span className="notification-item-message">{n.message}</span>
+                            <span className="notification-item-time">{formatTimeAgo(n.createdAt)}</span>
+                          </div>
+                          {!n.isRead && <span className="notification-unread-indicator" />}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="notifications-empty-state">
+                        <span className="notifications-empty-icon">
+                          <Icon.Bell />
+                        </span>
+                        <span className="notifications-empty-text">No notifications yet</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="navbar-user-profile">
               <div className="navbar-user-info">

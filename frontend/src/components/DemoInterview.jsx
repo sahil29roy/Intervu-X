@@ -11,11 +11,11 @@ import { io } from "socket.io-client";
 const socket = io(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? undefined : "https://intervu-x.onrender.com");
 const ICE_SERVERS = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
-// ── Icons ──
+// Icons 
 const Icon = {
   Video: () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>,
-  VideoOff: () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
-  Mic: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>,
+  VideoOff: () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10" /><line x1="1" y1="1" x2="23" y2="23" /></svg>,
+  Mic: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>,
   MicOff: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>,
   Play: () => <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style={{ marginRight: "6px" }}><path d="M8 5v14l11-7z" /></svg>,
   Refresh: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-5.6 5.6" /></svg>,
@@ -26,7 +26,7 @@ const Icon = {
   Activity: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
 };
 
-// ── Mock Data ──
+// Mock Data 
 const MOCK_CODING_QUESTION = {
   title: "Two Sum",
   description: "Given an array of integers `nums` and an integer `target`, return the indices of the two numbers such that they add up to `target`.\n\nYou may assume that each input has exactly one solution.",
@@ -56,19 +56,17 @@ const MOCK_MCQ_QUESTION = {
   correctAnswer: "B"
 };
 
-// ════════════════════════════════════════════════════
-// ══  MAIN COMPONENT
-// ════════════════════════════════════════════════════
+// MAIN COMPONENT
 export default function DemoInterview({ user, navigateToDashboard }) {
   const isInterviewer = user?.role === "interviewer";
 
-  // ── Phases ──
+  // Phases
   // "join" -> check permissions, enter room ID
   // "waiting" -> waiting for peer, room-ready
   // "active" -> the interview is live
   const [phase, setPhase] = useState("join");
   const [roomId, setRoomId] = useState("");
-  
+
   // Pre-join verification
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [permissionError, setPermissionError] = useState("");
@@ -78,11 +76,11 @@ export default function DemoInterview({ user, navigateToDashboard }) {
   const [roomReady, setRoomReady] = useState(false);
   const [peerDisconnected, setPeerDisconnected] = useState(false);
 
-  // ── AV Controls (Interviewer only, Candidate forced ON) ──
+  // AV Controls (Interviewer only, Candidate forced ON) 
   const [micEnabled, setMicEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
 
-  // ── Interview state ──
+  // Interview state 
   const [activeSection, setActiveSection] = useState(null);
   const [editorCode, setEditorCode] = useState(MOCK_CODING_QUESTION.starterCode);
   const [output, setOutput] = useState("");
@@ -93,15 +91,15 @@ export default function DemoInterview({ user, navigateToDashboard }) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const isRemoteCodeUpdate = useRef(false);
 
-  // ── Chat state ──
+  //  Chat state 
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const chatEndRef = useRef(null);
 
-  // ── Activity feed (interviewer only) ──
+  // Activity feed (interviewer only) 
   const [activityLog, setActivityLog] = useState([]);
 
-  // ── WebRTC state ──
+  // WebRTC state 
   const peerConnection = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -112,9 +110,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
   const [remoteScreenActive, setRemoteScreenActive] = useState(false);
   const [remoteScreenStream, setRemoteScreenStream] = useState(null);
 
-  // ════════════════════════════════════
-  // ══  SOCKET.IO LISTENERS
-  // ════════════════════════════════════
+  //   SOCKET.IO LISTENERS
   useEffect(() => {
     const onUserJoined = ({ role, userName }) => {
       setPeerOnline(true);
@@ -132,7 +128,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     };
 
     const onChatMessage = (msg) => setMessages(prev => [...prev, msg]);
-    
+
     const onCodeUpdate = (code) => {
       isRemoteCodeUpdate.current = true;
       setEditorCode(code);
@@ -222,20 +218,18 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     return `${m}:${sec}`;
   };
 
-  // ════════════════════════════════════
-  // ══  WebRTC + Permissions
-  // ════════════════════════════════════
+  //  WebRTC + Permissions
   const checkPermissions = async () => {
     setPermissionError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       localStreamRef.current = stream;
-      
+
       // Update local video preview (we use a timeout to ensure the ref is mounted)
       setTimeout(() => {
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
       }, 100);
-      
+
       setPermissionsGranted(true);
     } catch (err) {
       console.error("Permissions denied:", err);
@@ -289,7 +283,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
 
     pc.ontrack = (e) => {
       const stream = e.streams[0];
-      
+
       // We assume the first stream we receive is the camera/mic. 
       // If we receive a NEW stream with a different ID, it must be the screen share.
       if (remoteVideoRef.current && remoteVideoRef.current.srcObject && remoteVideoRef.current.srcObject.id !== stream.id) {
@@ -354,13 +348,11 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     socket.emit("screen-share-stop", { roomId });
   };
 
-  // ════════════════════════════════════
-  // ══  HANDLERS
-  // ════════════════════════════════════
+  //HANDLERS
   const handleJoinRoom = () => {
     const cleanRoomId = roomId.trim();
     if (!cleanRoomId || !permissionsGranted) return;
-    
+
     window.__demoRoomId = cleanRoomId;
     socket.emit("join-room", {
       roomId: cleanRoomId,
@@ -444,9 +436,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     };
   }, []);
 
-  // ════════════════════════════════════════════════════
-  // ══  RENDER: PHASE 1 — JOIN ROOM
-  // ════════════════════════════════════════════════════
+  //   RENDER: PHASE 1 — JOIN ROOM
   if (phase === "join") {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#0a0a0a", padding: "24px" }}>
@@ -458,7 +448,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
             </p>
           </CardHeader>
           <CardContent style={{ display: "flex", flexDirection: "column", gap: "20px", paddingTop: "16px" }}>
-            
+
             {/* Permission Check Area */}
             <div style={{ padding: "16px", backgroundColor: "#262626", borderRadius: "8px", border: "1px solid #333", textAlign: "center" }}>
               {!permissionsGranted ? (
@@ -525,9 +515,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     );
   }
 
-  // ════════════════════════════════════════════════════
-  // ══  RENDER: PHASE 2 — WAITING
-  // ════════════════════════════════════════════════════
+  //  RENDER: PHASE 2 — WAITING
   if (phase === "waiting") {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#0a0a0a", padding: "24px" }}>
@@ -536,7 +524,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
             <CardTitle style={{ fontSize: "24px", fontFamily: "'Space Grotesk', sans-serif" }}>Room: {roomId}</CardTitle>
           </CardHeader>
           <CardContent style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", padding: "24px" }}>
-            
+
             {/* Peer Status */}
             <div style={{ padding: "16px", backgroundColor: "#262626", borderRadius: "8px", width: "100%", border: "1px solid #333" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -576,9 +564,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     );
   }
 
-  // ════════════════════════════════════════════════════
-  // ══  RENDER: PHASE 3 — ACTIVE SESSION
-  // ════════════════════════════════════════════════════
+  //  RENDER: PHASE 3 — ACTIVE SESSION
 
   const getMySenderName = () => user?.name || (isInterviewer ? "Interviewer" : "Candidate");
 
@@ -631,22 +617,22 @@ export default function DemoInterview({ user, navigateToDashboard }) {
   // AV Control Bar for local video
   const AVControls = () => (
     <div style={{ position: "absolute", bottom: "8px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "8px", backgroundColor: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: "20px", zIndex: 10 }}>
-      <button 
-        onClick={toggleMic} 
+      <button
+        onClick={toggleMic}
         disabled={!isInterviewer}
         title={isInterviewer ? "Toggle Microphone" : "Microphone must remain on"}
-        style={{ 
-          background: micEnabled ? "#374151" : "#EF4444", border: "none", color: "#fff", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: isInterviewer ? "pointer" : "not-allowed", opacity: isInterviewer ? 1 : 0.6 
+        style={{
+          background: micEnabled ? "#374151" : "#EF4444", border: "none", color: "#fff", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: isInterviewer ? "pointer" : "not-allowed", opacity: isInterviewer ? 1 : 0.6
         }}
       >
         {micEnabled ? <Icon.Mic /> : <Icon.MicOff />}
       </button>
-      <button 
-        onClick={toggleVideo} 
+      <button
+        onClick={toggleVideo}
         disabled={!isInterviewer}
         title={isInterviewer ? "Toggle Camera" : "Camera must remain on"}
-        style={{ 
-          background: videoEnabled ? "#374151" : "#EF4444", border: "none", color: "#fff", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: isInterviewer ? "pointer" : "not-allowed", opacity: isInterviewer ? 1 : 0.6 
+        style={{
+          background: videoEnabled ? "#374151" : "#EF4444", border: "none", color: "#fff", width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: isInterviewer ? "pointer" : "not-allowed", opacity: isInterviewer ? 1 : 0.6
         }}
       >
         {videoEnabled ? <Icon.Video /> : <Icon.VideoOff />}
@@ -734,9 +720,7 @@ export default function DemoInterview({ user, navigateToDashboard }) {
     );
   }
 
-  // ══════════════════════════════════
-  // ══  CANDIDATE WORKSPACE
-  // ══════════════════════════════════
+  //  CANDIDATE WORKSPACE
   return (
     <div className="demo-interview-layout">
       <div className="demo-header">

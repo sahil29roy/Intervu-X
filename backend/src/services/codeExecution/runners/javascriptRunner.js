@@ -2,13 +2,12 @@ import fs from "fs";
 import path from "path";
 import { spawn } from "child_process";
 
-/**
- * Runner for JavaScript solutions inside sandbox environment using Docker.
- */
+
+// Runner for JavaScript solutions inside sandbox environment using Docker.
 export const runJavaScript = async (sourceCode, inputCase) => {
   const runId = Math.random().toString(36).substring(2, 15);
   const tempDir = path.resolve("temp");
-  
+
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
   }

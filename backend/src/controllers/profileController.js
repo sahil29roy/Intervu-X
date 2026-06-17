@@ -65,7 +65,6 @@ export const updateProfile = async (req, res) => {
             }
         }
 
-        // Perform update
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             { $set: updateData },
@@ -86,7 +85,6 @@ export const updateProfile = async (req, res) => {
     }
 };
 
-// Upload Profile Picture
 export const uploadProfilePicture = async (req, res) => {
     try {
         if (!req.file) {
@@ -114,7 +112,6 @@ export const uploadProfilePicture = async (req, res) => {
     }
 };
 
-// Upload Resume
 export const uploadResume = async (req, res) => {
     try {
         if (!req.file) {

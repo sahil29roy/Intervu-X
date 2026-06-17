@@ -22,7 +22,7 @@ const questionSchema = new mongoose.Schema({
         required: true
     },
     correctAnswer: {
-        type: String, // e.g. "Option A", "Option B", "Option C", "Option D" (or actual answer text)
+        type: String, // e.g. "Option A", (or actual answer text)
         required: true
     },
     explanation: {

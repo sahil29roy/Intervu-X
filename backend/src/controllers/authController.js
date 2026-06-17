@@ -4,7 +4,7 @@ import { z } from "zod";
 import User from "../models/User.js";
 import { ENV } from "../lib/env.js";
 
-// Helper to generate token
+// generate token method
 const generateToken = (userId) => {
     return jwt.sign({ id: userId }, ENV.JWT_SECRET || "fallback_jwt_secret_key", {
         expiresIn: "7d",
@@ -113,7 +113,7 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        // Check if user is active
+        // user active or not ..
         if (!user.isActive) {
             return res.status(403).json({ message: "Account is deactivated" });
         }
@@ -129,7 +129,6 @@ export const login = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in ms
         });
 
-        // Respond with user details
         const userJson = user.toJSON();
         delete userJson.password;
 
@@ -143,7 +142,6 @@ export const login = async (req, res) => {
     }
 };
 
-// Get authenticated user details
 export const getMe = async (req, res) => {
     try {
         return res.status(200).json({ user: req.user });

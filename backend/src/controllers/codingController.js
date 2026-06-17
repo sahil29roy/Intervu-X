@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import CodingQuestion from "../models/CodingQuestion.js";
 import CodingSubmission from "../models/CodingSubmission.js";
 import { executeCode } from "../services/codeExecution/executeCode.js";
+import { createNotification } from "./notificationController.js";
 
 // Zod schemas
 const createQuestionSchema = z.object({
@@ -32,9 +33,7 @@ const runGeneralCodeSchema = z.object({
     inputCase: z.string().optional().default("")
 });
 
-// Helper: Run JavaScript code in safe VM sandbox
-// TODO: Implement secure Docker container runner for code execution.
-// For now, testing-flow is maintained via mock execution logic in the submission controller.
+
 
 // POST /api/coding/questions (Admin only)
 export const createCodingQuestion = async (req, res) => {
@@ -110,14 +109,13 @@ export const deleteCodingQuestion = async (req, res) => {
 };
 
 // GET /api/coding/questions (Admins & Candidates)
-// Note: Candidates do not retrieve hidden test cases.
+//  Candidates should do not retrieve hidden test cases.
 export const getCodingQuestions = async (req, res) => {
     try {
         let questions;
         if (req.user.role === "admin" || req.user.role === "interviewer") {
             questions = await CodingQuestion.find().sort({ createdAt: -1 });
         } else {
-            // Exclude hidden test cases for candidates to prevent cheating
             questions = await CodingQuestion.find().select("-hiddenTestCases").sort({ createdAt: -1 });
         }
         return res.status(200).json({ questions });
@@ -193,7 +191,7 @@ export const submitCodingAttempt = async (req, res) => {
 
         for (let i = 0; i < testCases.length; i++) {
             const tc = testCases[i];
-            
+
             // Execute the code using our execution service
             const result = await executeCode(language, sourceCode, tc.input);
 
@@ -243,6 +241,15 @@ export const submitCodingAttempt = async (req, res) => {
             score
         });
 
+        // Trigger notification for candidate
+        await createNotification(
+            req.user._id,
+            "Coding Submission Evaluated",
+            `Your submission for coding question "${question.title}" was evaluated with verdict: ${finalVerdict} (Score: ${score}%).`,
+            "coding_attempt",
+            "/sandbox"
+        );
+
         return res.status(201).json({
             message: "Submission evaluated",
             submission: {
@@ -287,7 +294,7 @@ export const runTestsAttempt = async (req, res) => {
 
         const { language, sourceCode } = parsed.data;
 
-        // Currently, only javascript is natively executed
+        // Currently, only javascript 
         if (language.toLowerCase() !== "javascript") {
             return res.status(400).json({ message: "Only JavaScript is supported for execution currently" });
         }

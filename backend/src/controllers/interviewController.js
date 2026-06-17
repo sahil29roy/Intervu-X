@@ -2,6 +2,7 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import Interview from "../models/Interview.js";
 import User from "../models/User.js";
+import { createNotification } from "./notificationController.js";
 
 // Zod validation for creating an interview
 const createInterviewSchema = z.object({
@@ -21,7 +22,7 @@ const submitFeedbackSchema = z.object({
     recommendation: z.string().optional().default("")
 });
 
-// POST /api/interviews (Admin only)
+// POST /api/interviews (Admin )
 export const createInterview = async (req, res) => {
     try {
         const parsed = createInterviewSchema.safeParse(req.body);
@@ -62,6 +63,22 @@ export const createInterview = async (req, res) => {
             status: "pending"
         });
 
+        // Trigger notifications
+        await createNotification(
+            candidateId,
+            "Interview Scheduled",
+            `You have a new interview scheduled with ${interviewer.name} on ${new Date(scheduledDate).toLocaleString()}.`,
+            "interview_scheduled",
+            "/interviews"
+        );
+        await createNotification(
+            interviewerId,
+            "Interview Assigned",
+            `You have been assigned to interview ${candidate.name} on ${new Date(scheduledDate).toLocaleString()}.`,
+            "interview_scheduled",
+            "/live"
+        );
+
         return res.status(201).json({
             message: "Interview scheduled successfully",
             interview: newInterview
@@ -72,7 +89,7 @@ export const createInterview = async (req, res) => {
     }
 };
 
-// GET /api/interviews/my (Candidate only)
+// GET /api/interviews/my (Candidate)
 export const getMyInterviews = async (req, res) => {
     try {
         const interviews = await Interview.find({ candidateId: req.user._id })
@@ -86,10 +103,10 @@ export const getMyInterviews = async (req, res) => {
     }
 };
 
-// GET /api/interviews/assigned (Interviewer only)
+// GET /api/interviews/assigned (Interviewer)
 export const getAssignedInterviews = async (req, res) => {
     try {
-        const interviews = await Interview.find({ 
+        const interviews = await Interview.find({
             interviewerId: req.user._id,
             status: { $in: ["pending", "ongoing"] }
         })
@@ -103,7 +120,7 @@ export const getAssignedInterviews = async (req, res) => {
     }
 };
 
-// PUT /api/interviews/:id/feedback (Interviewer only)
+// PUT /api/interviews/:id/feedback (Interviewer)
 export const submitFeedback = async (req, res) => {
     try {
         const parsed = submitFeedbackSchema.safeParse(req.body);
@@ -129,11 +146,19 @@ export const submitFeedback = async (req, res) => {
             return res.status(403).json({ message: "Forbidden - You are not assigned to this interview" });
         }
 
-        // Update feedback and complete the interview
         interview.feedback = parsed.data;
         interview.status = "completed";
 
         await interview.save();
+
+        // Trigger notification for candidate
+        await createNotification(
+            interview.candidateId,
+            "Interview Feedback Submitted",
+            "Your interviewer has submitted feedback for your recent session. You can now view it on your dashboard.",
+            "feedback_submitted",
+            "/interviews"
+        );
 
         return res.status(200).json({
             message: "Feedback submitted successfully",
