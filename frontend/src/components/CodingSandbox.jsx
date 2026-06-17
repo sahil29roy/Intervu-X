@@ -53,7 +53,7 @@ const b = parseInt(readLine());
 console.log(a + b);
 `;
 
-export default function CodingSandbox({ user, navigateToDashboard }) {
+export default function CodingSandbox({ user, navigateToDashboard, initialSelectedProblem }) {
   const [problems, setProblems] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,6 +120,12 @@ export default function CodingSandbox({ user, navigateToDashboard }) {
       setEditorCode(DEFAULT_BOILERPLATE);
     }
   };
+
+  useEffect(() => {
+    if (initialSelectedProblem) {
+      handleOpenProblem(initialSelectedProblem);
+    }
+  }, [initialSelectedProblem]);
 
   const handleCodeChange = (value) => {
     setEditorCode(value);

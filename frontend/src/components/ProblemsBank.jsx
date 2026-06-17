@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
-export default function ProblemsBank({ user }) {
+export default function ProblemsBank({ user, initialViewingProblem }) {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -12,7 +12,13 @@ export default function ProblemsBank({ user }) {
   const [difficultyFilter, setDifficultyFilter] = useState("All");
 
   // View state
-  const [viewingProblem, setViewingProblem] = useState(null);
+  const [viewingProblem, setViewingProblem] = useState(initialViewingProblem || null);
+
+  useEffect(() => {
+    if (initialViewingProblem) {
+      setViewingProblem(initialViewingProblem);
+    }
+  }, [initialViewingProblem]);
 
   useEffect(() => {
     fetchProblems();

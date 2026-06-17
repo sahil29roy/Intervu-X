@@ -34,6 +34,14 @@ export default function Dashboard({ user, onLogout }) {
   const [showNotifications, setShowNotifications] = useState(false)
   const dropdownRef = useRef(null)
 
+  // Search functionality states
+  const [searchData, setSearchData] = useState({ questions: [], tests: [], candidates: [] })
+  const [loadingSearchData, setLoadingSearchData] = useState(false)
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
+  const [selectedSandboxProblem, setSelectedSandboxProblem] = useState(null)
+  const [viewingProblemsBankProblem, setViewingProblemsBankProblem] = useState(null)
+  const searchDropdownRef = useRef(null)
+
   // Fetch notifications
   const fetchNotifications = async () => {
     try {
@@ -111,6 +119,9 @@ export default function Dashboard({ user, onLogout }) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowNotifications(false)
       }
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target)) {
+        setShowSearchDropdown(false)
+      }
     }
     document.addEventListener("mousedown", handleOutsideClick)
 
@@ -119,6 +130,59 @@ export default function Dashboard({ user, onLogout }) {
       document.removeEventListener("mousedown", handleOutsideClick)
     }
   }, [user._id])
+
+  // Fetch coding questions, tests, and candidates for search
+  const fetchSearchData = async () => {
+    if (searchData.questions.length > 0 || loadingSearchData) return;
+    try {
+      setLoadingSearchData(true)
+      const token = localStorage.getItem("intervux_token")
+      const headers = { Authorization: `Bearer ${token}` }
+
+      // Fetch coding questions
+      const questionsPromise = fetch("/api/coding/questions", { headers })
+        .then(r => r.ok ? r.json() : { questions: [] })
+        .catch(() => ({ questions: [] }))
+
+      // Fetch MCQ tests
+      const testsPromise = fetch("/api/tests", { headers })
+        .then(r => r.ok ? r.json() : { tests: [] })
+        .catch(() => ({ tests: [] }))
+
+      // Fetch Candidates / Interviews based on role
+      let candidatesPromise = Promise.resolve({ interviews: [] });
+      if (user.role === "interviewer") {
+        candidatesPromise = fetch("/api/interviews/assigned", { headers })
+          .then(r => r.ok ? r.json() : { interviews: [] })
+          .catch(() => ({ interviews: [] }));
+      } else if (user.role === "admin") {
+        candidatesPromise = fetch("/api/interviews", { headers })
+          .then(r => r.ok ? r.json() : { interviews: [] })
+          .catch(() => ({ interviews: [] }));
+      }
+
+      const [questionsData, testsData, candidatesData] = await Promise.all([
+        questionsPromise,
+        testsPromise,
+        candidatesPromise
+      ])
+
+      // Extract unique candidate user objects from interviews
+      const candidateList = (candidatesData.interviews || [])
+        .map(i => i.candidateId)
+        .filter((c, idx, self) => c && self.findIndex(item => item._id === c._id) === idx);
+
+      setSearchData({
+        questions: questionsData.questions || [],
+        tests: testsData.tests || [],
+        candidates: candidateList
+      })
+    } catch (err) {
+      console.error("Failed to fetch search data", err)
+    } finally {
+      setLoadingSearchData(false)
+    }
+  }
 
   // Helper: Format Time Ago
   const formatTimeAgo = (dateString) => {
@@ -402,16 +466,207 @@ export default function Dashboard({ user, onLogout }) {
         {/* Top Navbar */}
         <header className="dashboard-top-navbar">
           <div className="navbar-left">
-            <div className="navbar-search-wrapper">
+            <div className="navbar-search-wrapper" ref={searchDropdownRef}>
               <span className="navbar-search-icon">
                 <Icon.Search />
               </span>
               <Input
                 className="navbar-search-input"
-                placeholder="Search queries, tests, problems..."
+                placeholder="Search pages, tests, problems..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setShowSearchDropdown(true)
+                }}
+                onFocus={() => {
+                  fetchSearchData()
+                  setShowSearchDropdown(true)
+                }}
               />
+
+              {/* Glassmorphic Search Results Dropdown */}
+              {showSearchDropdown && searchQuery.trim() !== "" && (
+                <div className="navbar-search-dropdown">
+                  {/* Category: Pages/Navigation */}
+                  {(() => {
+                    const matchedNavs = navItems.filter(item => 
+                      item.label.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    if (matchedNavs.length === 0) return null
+                    return (
+                      <div className="search-dropdown-section">
+                        <span className="search-dropdown-section-title">Quick Links</span>
+                        {matchedNavs.map(nav => (
+                          <button
+                            key={nav.id}
+                            className="search-dropdown-item"
+                            onClick={() => {
+                              handleNavClick(nav.id)
+                              setSearchQuery("")
+                              setShowSearchDropdown(false)
+                            }}
+                          >
+                            <span className="search-dropdown-item-icon">{nav.icon}</span>
+                            <span className="search-dropdown-item-text">{nav.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )
+                  })()}
+
+                  {/* Category: Coding Problems */}
+                  {(() => {
+                    const matchedQuestions = searchData.questions.filter(q => 
+                      q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (q.tags && q.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+                    )
+                    if (matchedQuestions.length === 0) return null
+                    return (
+                      <div className="search-dropdown-section">
+                        <span className="search-dropdown-section-title">Coding Challenges</span>
+                        {matchedQuestions.map(q => (
+                          <button
+                            key={q._id}
+                            className="search-dropdown-item"
+                            onClick={() => {
+                              if (user.role === "candidate") {
+                                setSelectedSandboxProblem(q)
+                                handleNavClick("sandbox")
+                              } else {
+                                setViewingProblemsBankProblem(q)
+                                handleNavClick("problems")
+                              }
+                              setSearchQuery("")
+                              setShowSearchDropdown(false)
+                            }}
+                          >
+                            <span className="search-dropdown-item-icon"><Icon.Coding /></span>
+                            <span className="search-dropdown-item-text">{q.title}</span>
+                            <span className="search-dropdown-item-badge">{q.difficulty}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )
+                  })()}
+
+                  {/* Category: MCQ Tests */}
+                  {(() => {
+                    const matchedTests = searchData.tests.filter(t => 
+                      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      t.category.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    if (matchedTests.length === 0) return null
+                    return (
+                      <div className="search-dropdown-section">
+                        <span className="search-dropdown-section-title">MCQ Assessments</span>
+                        {matchedTests.map(t => (
+                          <button
+                            key={t._id}
+                            className="search-dropdown-item"
+                            onClick={() => {
+                              if (user.role === "admin") {
+                                handleNavClick("tests_admin")
+                              } else {
+                                handleNavClick("tests")
+                              }
+                              setSearchQuery("")
+                              setShowSearchDropdown(false)
+                            }}
+                          >
+                            <span className="search-dropdown-item-icon"><Icon.Tests /></span>
+                            <span className="search-dropdown-item-text">{t.title}</span>
+                            <span className="search-dropdown-item-badge">{t.category}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )
+                  })()}
+
+                  {/* Category: Interviews / Candidates */}
+                  {(() => {
+                    const matchedCandidates = searchData.candidates.filter(c => 
+                      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      c.email?.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    
+                    // Candidates can search their interviews by interviewer name
+                    const matchedInterviews = user.role === "candidate" 
+                      ? dashboardData.interviews.filter(i => 
+                          i.interviewerId?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                      : []
+
+                    if (matchedCandidates.length === 0 && matchedInterviews.length === 0) return null
+
+                    return (
+                      <div className="search-dropdown-section">
+                        <span className="search-dropdown-section-title">Interviews & Candidates</span>
+                        {matchedCandidates.map(c => (
+                          <button
+                            key={c._id}
+                            className="search-dropdown-item"
+                            onClick={() => {
+                              if (user.role === "interviewer") {
+                                handleNavClick("candidates")
+                              } else if (user.role === "admin") {
+                                handleNavClick("interviews_list")
+                              }
+                              setSearchQuery("")
+                              setShowSearchDropdown(false)
+                            }}
+                          >
+                            <span className="search-dropdown-item-icon"><Icon.Profile /></span>
+                            <span className="search-dropdown-item-text">{c.name} ({c.email})</span>
+                          </button>
+                        ))}
+                        {matchedInterviews.map(i => (
+                          <button
+                            key={i._id}
+                            className="search-dropdown-item"
+                            onClick={() => {
+                              handleNavClick("interviews")
+                              setSearchQuery("")
+                              setShowSearchDropdown(false)
+                            }}
+                          >
+                            <span className="search-dropdown-item-icon"><Icon.Interviews /></span>
+                            <span className="search-dropdown-item-text">Interview w/ {i.interviewerId?.name || "Pending"}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )
+                  })()}
+
+                  {/* If nothing matches */}
+                  {(() => {
+                    const matchedNavs = navItems.filter(item => 
+                      item.label.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    const matchedQuestions = searchData.questions.filter(q => 
+                      q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (q.tags && q.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+                    )
+                    const matchedTests = searchData.tests.filter(t => 
+                      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      t.category.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    const matchedCandidates = searchData.candidates.filter(c => 
+                      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      c.email?.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    const matchedInterviews = user.role === "candidate" 
+                      ? dashboardData.interviews.filter(i => 
+                          i.interviewerId?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                      : []
+
+                    if (matchedNavs.length === 0 && matchedQuestions.length === 0 && matchedTests.length === 0 && matchedCandidates.length === 0 && matchedInterviews.length === 0) {
+                      return <div className="search-dropdown-empty">No matching results found</div>
+                    }
+                    return null
+                  })()}
+                </div>
+              )}
             </div>
           </div>
 
@@ -514,6 +769,7 @@ export default function Dashboard({ user, onLogout }) {
             <CodingSandbox
               user={user}
               navigateToDashboard={() => setActiveNav("dashboard")}
+              initialSelectedProblem={selectedSandboxProblem}
             />
           )}
 
@@ -560,11 +816,11 @@ export default function Dashboard({ user, onLogout }) {
             />
           )}
 
-          {activeNav === "problems_bank" && (
-            <ProblemsBank user={user} />
+          {activeNav === "problems" && (
+            <ProblemsBank user={user} initialViewingProblem={viewingProblemsBankProblem} />
           )}
 
-          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && activeNav !== "interviews" && activeNav !== "live_interview" && activeNav !== "candidates" && activeNav !== "problems_bank" && (
+          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && activeNav !== "interviews" && activeNav !== "live_interview" && activeNav !== "candidates" && activeNav !== "problems" && (
             <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
               <CardHeader>
                 <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>
