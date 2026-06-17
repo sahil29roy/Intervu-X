@@ -26,7 +26,9 @@ export default function Dashboard({ user, onLogout }) {
   const [dashboardData, setDashboardData] = useState({
     interviews: [],
     testAttempts: [],
-    codingSubmissions: []
+    codingSubmissions: [],
+    questions: [],
+    submissions: []
   })
   const [loadingDashboard, setLoadingDashboard] = useState(false)
 
@@ -221,7 +223,7 @@ export default function Dashboard({ user, onLogout }) {
   const unreadCount = notifications.filter(n => !n.isRead).length
 
   useEffect(() => {
-    if (user.role === "candidate" && activeNav === "dashboard") {
+    if (activeNav === "dashboard") {
       fetchDashboardData()
     }
   }, [user.role, activeNav])
@@ -230,22 +232,45 @@ export default function Dashboard({ user, onLogout }) {
     try {
       setLoadingDashboard(true)
       const token = localStorage.getItem("intervux_token")
+      const headers = { Authorization: `Bearer ${token}` }
       
-      const [interviewsRes, testsRes, codingRes] = await Promise.all([
-        fetch("/api/interviews/my", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/tests/my-attempts", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/coding/submissions/my", { headers: { Authorization: `Bearer ${token}` } })
-      ])
+      if (user.role === "candidate") {
+        const [interviewsRes, testsRes, codingRes] = await Promise.all([
+          fetch("/api/interviews/my", { headers }),
+          fetch("/api/tests/my-attempts", { headers }),
+          fetch("/api/coding/submissions/my", { headers })
+        ])
 
-      const interviewsData = interviewsRes.ok ? await interviewsRes.json() : { interviews: [] }
-      const testsData = testsRes.ok ? await testsRes.json() : { attempts: [] }
-      const codingData = codingRes.ok ? await codingRes.json() : { submissions: [] }
+        const interviewsData = interviewsRes.ok ? await interviewsRes.json() : { interviews: [] }
+        const testsData = testsRes.ok ? await testsRes.json() : { attempts: [] }
+        const codingData = codingRes.ok ? await codingRes.json() : { submissions: [] }
 
-      setDashboardData({
-        interviews: interviewsData.interviews || [],
-        testAttempts: testsData.attempts || [],
-        codingSubmissions: codingData.submissions || []
-      })
+        setDashboardData({
+          interviews: interviewsData.interviews || [],
+          testAttempts: testsData.attempts || [],
+          codingSubmissions: codingData.submissions || [],
+          questions: [],
+          submissions: []
+        })
+      } else if (user.role === "interviewer") {
+        const [interviewsRes, questionsRes, submissionsRes] = await Promise.all([
+          fetch("/api/interviews/assigned", { headers }),
+          fetch("/api/coding/questions", { headers }),
+          fetch("/api/coding/submissions/all", { headers })
+        ])
+
+        const interviewsData = interviewsRes.ok ? await interviewsRes.json() : { interviews: [] }
+        const questionsData = questionsRes.ok ? await questionsRes.json() : { questions: [] }
+        const submissionsData = submissionsRes.ok ? await submissionsRes.json() : { submissions: [] }
+
+        setDashboardData({
+          interviews: interviewsData.interviews || [],
+          testAttempts: [],
+          codingSubmissions: [],
+          questions: questionsData.questions || [],
+          submissions: submissionsData.submissions || []
+        })
+      }
     } catch (err) {
       console.error("Failed to load dashboard data", err)
     } finally {
@@ -418,6 +443,18 @@ export default function Dashboard({ user, onLogout }) {
 
   const recentTestResults = dashboardData.testAttempts.slice(0, 3);
   const recentCodingAttempts = dashboardData.codingSubmissions.slice(0, 3);
+
+  // Derived Interviewer Data
+  const todayInterviews = dashboardData.interviews.filter(i => {
+    if (!i.scheduledDate) return false;
+    const interviewDate = new Date(i.scheduledDate);
+    const today = new Date();
+    return (
+      interviewDate.getDate() === today.getDate() &&
+      interviewDate.getMonth() === today.getMonth() &&
+      interviewDate.getFullYear() === today.getFullYear()
+    );
+  });
 
   return (
     <div className="dashboard-layout">
@@ -798,6 +835,17 @@ export default function Dashboard({ user, onLogout }) {
             />
           )}
 
+          {activeNav === "live" && (
+            <InterviewsList 
+              user={user} 
+              navigateToDashboard={() => setActiveNav("dashboard")}
+              onJoinInterview={(id) => {
+                setActiveInterviewId(id);
+                setActiveNav("live_interview");
+              }}
+            />
+          )}
+
           {activeNav === "live_interview" && (
             <LiveInterview
               user={user}
@@ -820,7 +868,7 @@ export default function Dashboard({ user, onLogout }) {
             <ProblemsBank user={user} initialViewingProblem={viewingProblemsBankProblem} />
           )}
 
-          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && activeNav !== "interviews" && activeNav !== "live_interview" && activeNav !== "candidates" && activeNav !== "problems" && (
+          {activeNav !== "dashboard" && activeNav !== "profile" && activeNav !== "tests" && activeNav !== "tests_admin" && activeNav !== "sandbox" && activeNav !== "local_ide" && activeNav !== "demo_interview" && activeNav !== "interviews" && activeNav !== "live" && activeNav !== "live_interview" && activeNav !== "candidates" && activeNav !== "problems" && (
             <Card className="profile-section-card" style={{ textAlign: "center", padding: "48px 24px" }}>
               <CardHeader>
                 <CardTitle style={{ fontSize: "24px", fontFamily: "Space Grotesk" }}>
@@ -1041,7 +1089,13 @@ export default function Dashboard({ user, onLogout }) {
                   <div className="welcome-banner">
                     <div>
                       <h1 className="welcome-title">Welcome back, {user.name}!</h1>
-                      <p className="welcome-subtitle">You have 3 interviews scheduled today.</p>
+                      <p className="welcome-subtitle">
+                        {todayInterviews.length === 0
+                          ? "No interview is scheduled today."
+                          : todayInterviews.length === 1
+                          ? "You have 1 interview scheduled today."
+                          : `You have ${todayInterviews.length} interviews scheduled today.`}
+                      </p>
                     </div>
                     <Button variant="default" style={{ width: "auto" }} onClick={() => handleNavClick("live")}>
                       Start Interview Session
@@ -1055,7 +1109,7 @@ export default function Dashboard({ user, onLogout }) {
                         <Icon.Interviews />
                       </div>
                       <div className="dashboard-stat-details">
-                        <span className="dashboard-stat-number">3</span>
+                        <span className="dashboard-stat-number">{todayInterviews.length}</span>
                         <span className="dashboard-stat-label">Interviews Scheduled Today</span>
                       </div>
                     </div>
@@ -1065,7 +1119,7 @@ export default function Dashboard({ user, onLogout }) {
                         <Icon.ShieldAlert />
                       </div>
                       <div className="dashboard-stat-details">
-                        <span className="dashboard-stat-number">2</span>
+                        <span className="dashboard-stat-number">{dashboardData.interviews.length}</span>
                         <span className="dashboard-stat-label">Pending Feedback Forms</span>
                       </div>
                     </div>
@@ -1075,7 +1129,9 @@ export default function Dashboard({ user, onLogout }) {
                         <Icon.Users />
                       </div>
                       <div className="dashboard-stat-details">
-                        <span className="dashboard-stat-number">12</span>
+                        <span className="dashboard-stat-number">
+                          {dashboardData.submissions ? new Set(dashboardData.submissions.map(s => s.candidateId?._id).filter(Boolean)).size : 0}
+                        </span>
                         <span className="dashboard-stat-label">Total Candidates Evaluated</span>
                       </div>
                     </div>
@@ -1085,7 +1141,7 @@ export default function Dashboard({ user, onLogout }) {
                         <Icon.Coding />
                       </div>
                       <div className="dashboard-stat-details">
-                        <span className="dashboard-stat-number">8</span>
+                        <span className="dashboard-stat-number">{dashboardData.questions ? dashboardData.questions.length : 0}</span>
                         <span className="dashboard-stat-label">Problems Created</span>
                       </div>
                     </div>
@@ -1115,44 +1171,41 @@ export default function Dashboard({ user, onLogout }) {
                               <Badge variant="amber">Demo</Badge>
                             </div>
                             
-                            <div className="card-list-item">
-                              <div className="item-left-info">
-                                <span className="item-icon">
-                                  <Icon.Interviews />
-                                </span>
-                                <div className="item-text-container">
-                                  <span className="item-title">Technical Coding (Round 1)</span>
-                                  <span className="item-subtitle">Candidate: Emily Blunt • 10:00 AM - 11:00 AM</span>
-                                </div>
+                            {todayInterviews.length > 0 ? (
+                              todayInterviews.map((interview) => {
+                                const candidate = interview.candidateId || {};
+                                return (
+                                  <div 
+                                    key={interview._id} 
+                                    className="card-list-item"
+                                    style={{ cursor: "pointer" }}
+                                    onClick={() => {
+                                      setActiveInterviewId(interview._id);
+                                      setActiveNav("live_interview");
+                                    }}
+                                  >
+                                    <div className="item-left-info">
+                                      <span className="item-icon">
+                                        <Icon.Interviews />
+                                      </span>
+                                      <div className="item-text-container">
+                                        <span className="item-title">Technical Interview</span>
+                                        <span className="item-subtitle">
+                                          Candidate: {candidate.name || "Unknown"} • {new Date(interview.scheduledDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <Badge variant={interview.status === "ongoing" ? "teal" : "amber"}>
+                                      {interview.status === "ongoing" ? "Ongoing" : "Scheduled"}
+                                    </Badge>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div style={{ color: "#9CA3AF", fontSize: "14px", padding: "12px 0", textAlign: "center" }}>
+                                No interviews scheduled today.
                               </div>
-                              <Badge variant="amber">Next Up</Badge>
-                            </div>
-
-                            <div className="card-list-item">
-                              <div className="item-left-info">
-                                <span className="item-icon">
-                                  <Icon.Interviews />
-                                </span>
-                                <div className="item-text-container">
-                                  <span className="item-title">System Design & Core Java</span>
-                                  <span className="item-subtitle">Candidate: John Krasinski • 2:00 PM - 3:00 PM</span>
-                                </div>
-                              </div>
-                              <Badge variant="outline">Scheduled</Badge>
-                            </div>
-
-                            <div className="card-list-item" style={{ opacity: 0.6 }}>
-                              <div className="item-left-info">
-                                <span className="item-icon">
-                                  <Icon.Interviews />
-                                </span>
-                                <div className="item-text-container">
-                                  <span className="item-title">Algorithms & Problem Solving</span>
-                                  <span className="item-subtitle">Candidate: Ryan Reynolds • 8:30 AM - 9:30 AM</span>
-                                </div>
-                              </div>
-                              <Badge variant="teal">Completed</Badge>
-                            </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -1180,24 +1233,25 @@ export default function Dashboard({ user, onLogout }) {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              <TableRow>
-                                <TableCell style={{ fontWeight: 500 }}>Emily Blunt</TableCell>
-                                <TableCell>Senior Fullstack Engineer</TableCell>
-                                <TableCell>5+ Years</TableCell>
-                                <TableCell>June 10, 2026</TableCell>
-                              </TableRow>
-                              <TableRow>
-                                <TableCell style={{ fontWeight: 500 }}>John Krasinski</TableCell>
-                                <TableCell>Lead Backend Developer</TableCell>
-                                <TableCell>8+ Years</TableCell>
-                                <TableCell>June 08, 2026</TableCell>
-                              </TableRow>
-                              <TableRow>
-                                <TableCell style={{ fontWeight: 500 }}>Ryan Reynolds</TableCell>
-                                <TableCell>Senior Frontend Engineer</TableCell>
-                                <TableCell>6 Years</TableCell>
-                                <TableCell>June 05, 2026</TableCell>
-                              </TableRow>
+                              {dashboardData.interviews.length > 0 ? (
+                                dashboardData.interviews.slice(0, 3).map((interview) => {
+                                  const candidate = interview.candidateId || {};
+                                  return (
+                                    <TableRow key={interview._id}>
+                                      <TableCell style={{ fontWeight: 500 }}>{candidate.name || "Unknown Candidate"}</TableCell>
+                                      <TableCell>{candidate.headline || "Senior Developer"}</TableCell>
+                                      <TableCell>{candidate.skills && candidate.skills.length > 0 ? candidate.skills.slice(0, 3).join(", ") : "N/A"}</TableCell>
+                                      <TableCell>{new Date(interview.scheduledDate).toLocaleDateString()}</TableCell>
+                                    </TableRow>
+                                  );
+                                })
+                              ) : (
+                                <TableRow>
+                                  <TableCell colSpan={4} style={{ textAlign: "center", color: "#9CA3AF" }}>
+                                    No candidates assigned.
+                                  </TableCell>
+                                </TableRow>
+                              )}
                             </TableBody>
                           </Table>
                         </CardContent>
