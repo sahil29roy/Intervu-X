@@ -66,6 +66,7 @@ export default function CodingSandbox({ user, navigateToDashboard, initialSelect
   const [submitting, setSubmitting] = useState(false);
   const [verdict, setVerdict] = useState(null);
   const [showFailedDetails, setShowFailedDetails] = useState(false);
+  const [showSubmittedPage, setShowSubmittedPage] = useState(false);
 
   // Split-pane resizer state
   const [leftWidth, setLeftWidth] = useState(50); // percentage
@@ -110,6 +111,7 @@ export default function CodingSandbox({ user, navigateToDashboard, initialSelect
     setSelectedProblem(prob);
     setVerdict(null);
     setShowFailedDetails(false);
+    setShowSubmittedPage(false);
     setActiveTab("code");
 
     // Load draft from localStorage or fallback to default boilerplate
@@ -166,6 +168,7 @@ export default function CodingSandbox({ user, navigateToDashboard, initialSelect
       const data = await res.json();
       if (res.ok) {
         setVerdict(data);
+        setShowSubmittedPage(true);
         // Refresh submissions
         const subsRes = await fetch("/api/coding/submissions/my", {
           headers: { Authorization: `Bearer ${token}` }
@@ -189,6 +192,7 @@ export default function CodingSandbox({ user, navigateToDashboard, initialSelect
     setSubmitting(true);
     setVerdict(null);
     setShowFailedDetails(false);
+    setShowSubmittedPage(false);
 
     try {
       const token = localStorage.getItem("intervux_token");
@@ -289,8 +293,117 @@ export default function CodingSandbox({ user, navigateToDashboard, initialSelect
           </div>
         </div>
 
-        {/* Resizable Split Pane */}
-        <div className="coding-split-pane" ref={splitPaneRef}>
+        {showSubmittedPage && verdict ? (
+          <div className="submission-results-container">
+            <div className="submission-verdict-card animate-fade-in">
+              <div className="submission-verdict-header">
+                <div className={`verdict-glow-ring ${verdict.submission.verdict === "Accepted" ? "success" : "failure"}`}>
+                  {verdict.submission.verdict === "Accepted" ? (
+                    <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{ color: "#10B981" }}>
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{ color: "#EF4444" }}>
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  )}
+                </div>
+                <h3 className="submission-verdict-title">
+                  {verdict.submission.verdict === "Accepted" ? "Submission Accepted" : `Submission: ${verdict.submission.verdict}`}
+                </h3>
+                <p className="submission-verdict-desc">
+                  {verdict.submission.verdict === "Accepted" 
+                    ? "Well done! Your solution has successfully passed all evaluation test cases."
+                    : "Your code failed to pass all execution tests. Review the details below to improve your solution."}
+                </p>
+              </div>
+
+              <div className="submission-divider" />
+
+              <div className="submission-metrics-row">
+                <div className="submission-metric-card">
+                  <span className="metric-label">Evaluation Score</span>
+                  <div className={`metric-score-value ${verdict.submission.verdict === "Accepted" ? "success" : "failure"}`}>
+                    <span className="big-val">{verdict.submission.score}</span>
+                    <span className="small-val">/100</span>
+                  </div>
+                </div>
+
+                <div className="submission-metric-card">
+                  <span className="metric-label">Test Cases</span>
+                  <span className="metric-value-text">{verdict.passedCount} / {verdict.totalCount} Passed</span>
+                </div>
+
+                <div className="submission-metric-card">
+                  <span className="metric-label">Execution Time</span>
+                  <span className="metric-value-text">{verdict.submission.executionTime} ms</span>
+                </div>
+
+                <div className="submission-metric-card">
+                  <span className="metric-label">Memory Used</span>
+                  <span className="metric-value-text">{verdict.submission.memoryUsed} KB</span>
+                </div>
+              </div>
+
+              {verdict.failedTestCaseDetails && (
+                <div className="submission-failed-details-section">
+                  <h4 className="failed-section-title">Failed Test Case Details</h4>
+                  <div className="failed-details-card animate-slide-up">
+                    <div className="failed-detail-item">
+                      <span className="lbl">Test Case Index</span>
+                      <span className="val val-mono">#{verdict.failedTestCaseDetails.testCaseIndex}</span>
+                    </div>
+                    <div className="failed-detail-item">
+                      <span className="lbl">Input</span>
+                      <pre className="val-block">{verdict.failedTestCaseDetails.input}</pre>
+                    </div>
+                    {verdict.failedTestCaseDetails.error ? (
+                      <div className="failed-detail-item">
+                        <span className="lbl error-lbl">Runtime Error</span>
+                        <pre className="val-block error-block">{verdict.failedTestCaseDetails.error}</pre>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="failed-detail-item">
+                          <span className="lbl">Expected Output</span>
+                          <pre className="val-block expected-block">{verdict.failedTestCaseDetails.expectedOutput}</pre>
+                        </div>
+                        <div className="failed-detail-item">
+                          <span className="lbl error-lbl">Your Output</span>
+                          <pre className="val-block actual-block">{verdict.failedTestCaseDetails.actualOutput}</pre>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="submission-divider" />
+
+              <div className="submission-actions-row">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubmittedPage(false)}
+                  style={{ width: "auto", padding: "10px 20px" }}
+                >
+                  <Icon.Refresh /> Try Again / Edit Code
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    setShowSubmittedPage(false);
+                    setSelectedProblem(null);
+                  }}
+                  style={{ width: "auto", padding: "10px 24px", background: "#D97706", borderColor: "#D97706", color: "#171717" }}
+                >
+                  <Icon.Back /> Back to Problems Bank
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="coding-split-pane" ref={splitPaneRef}>
           {/* Left Panel: Description */}
           <div className="coding-pane-left" style={{ width: `${leftWidth}%` }}>
             <div className="pane-left-content">
@@ -538,6 +651,7 @@ export default function CodingSandbox({ user, navigateToDashboard, initialSelect
             </div>
           </div>
         </div>
+        )}
       </div>
     );
   }

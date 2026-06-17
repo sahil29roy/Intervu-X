@@ -2786,4 +2786,256 @@ body {
   font-size: 13px;
 }
 
+/* ==========================================================================
+   Dedicated Submission Page Styles (Premium Glassmorphism & Animations)
+   ========================================================================== */
+
+.submission-results-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 32px 16px;
+  overflow-y: auto;
+  flex: 1;
+  width: 100%;
+}
+
+.submission-verdict-card {
+  width: 100%;
+  max-width: 800px;
+  background-color: rgba(26, 26, 26, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.submission-verdict-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.verdict-glow-ring {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.verdict-glow-ring.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.verdict-glow-ring.failure {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 2px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+.submission-verdict-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: #EDEDED;
+  margin: 0;
+}
+
+.submission-verdict-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #9CA3AF;
+  max-width: 560px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.submission-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.08);
+  width: 100%;
+}
+
+.submission-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.submission-metric-card {
+  background-color: rgba(30, 30, 30, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  min-height: 110px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.submission-metric-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.submission-metric-card .metric-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-score-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+}
+
+.metric-score-value.success .big-val {
+  color: #10B981;
+  font-size: 32px;
+}
+
+.metric-score-value.failure .big-val {
+  color: #EF4444;
+  font-size: 32px;
+}
+
+.metric-score-value .small-val {
+  color: #52525B;
+  font-size: 16px;
+  margin-left: 2px;
+}
+
+.metric-value-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #EDEDED;
+}
+
+.submission-failed-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.failed-section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #EDEDED;
+  margin: 0;
+}
+
+.failed-details-card {
+  background-color: rgba(20, 20, 20, 0.6);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.failed-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.failed-detail-item .lbl {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.failed-detail-item .lbl.error-lbl {
+  color: #EF4444;
+}
+
+.failed-detail-item .val {
+  font-size: 14px;
+  color: #EDEDED;
+}
+
+.failed-detail-item .val-mono {
+  font-family: 'Geist Mono', monospace;
+  font-weight: 600;
+}
+
+.submission-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .submission-actions-row {
+    flex-direction: column;
+  }
+  .submission-actions-row button {
+    width: 100% !important;
+  }
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 
