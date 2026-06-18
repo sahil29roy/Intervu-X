@@ -1,6 +1,7 @@
 import express from "express"
 import path from "path"
 import cors from "cors"
+import fs from "fs"
 import { createServer } from "http"
 import { Server } from "socket.io"
 import { ENV } from "./lib/env.js"
@@ -188,8 +189,26 @@ io.on("connection", (socket) => {
     });
 });
 
+const cleanTempDirectory = () => {
+    try {
+        const tempDir = path.resolve("temp");
+        if (fs.existsSync(tempDir)) {
+            const files = fs.readdirSync(tempDir);
+            for (const file of files) {
+                if (file !== ".gitkeep") {
+                    fs.unlinkSync(path.join(tempDir, file));
+                }
+            }
+            console.log("Temporary sandbox files cleaned successfully.");
+        }
+    } catch (err) {
+        console.error("Failed to clean temporary sandbox directory:", err.message);
+    }
+};
+
 const startServer = async () => {
     try {
+        cleanTempDirectory();
         await connectDB();
         httpServer.listen(ENV.PORT, () => {
             console.log("server is running on port ", ENV.PORT)

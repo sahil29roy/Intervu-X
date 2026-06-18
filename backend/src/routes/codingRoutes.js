@@ -20,10 +20,10 @@ router.get("/questions", protectRoute, getCodingQuestions);
 router.get("/questions/:id", protectRoute, getCodingQuestionById);
 router.post("/run", protectRoute, runGeneralCode);
 
-// Candidate only
-router.post("/questions/:id/submit", protectRoute, authorizeRoles("candidate"), submitCodingAttempt);
-router.post("/questions/:id/run-tests", protectRoute, authorizeRoles("candidate"), runTestsAttempt);
-router.get("/submissions/my", protectRoute, authorizeRoles("candidate"), getMyCodingSubmissions);
+// Candidate, Interviewer, and Admin
+router.post("/questions/:id/submit", protectRoute, authorizeRoles("candidate", "admin", "interviewer"), submitCodingAttempt);
+router.post("/questions/:id/run-tests", protectRoute, authorizeRoles("candidate", "admin", "interviewer"), runTestsAttempt);
+router.get("/submissions/my", protectRoute, authorizeRoles("candidate", "admin", "interviewer"), getMyCodingSubmissions);
 
 // Admin only
 router.post("/questions", protectRoute, authorizeRoles("admin"), createCodingQuestion);

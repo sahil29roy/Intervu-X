@@ -384,7 +384,10 @@ export default function CodingSandbox({ user, navigateToDashboard, initialSelect
               <div className="submission-actions-row">
                 <Button
                   variant="outline"
-                  onClick={() => setShowSubmittedPage(false)}
+                  onClick={() => {
+                    setShowSubmittedPage(false);
+                    setVerdict(null);
+                  }}
                   style={{ width: "auto", padding: "10px 20px" }}
                 >
                   <Icon.Refresh /> Try Again / Edit Code

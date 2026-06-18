@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 596 200" width="596" height="200">
+  <rect width="596" height="200" fill="#1a1a1a"/>
+  <defs>
+    <style>
+      .ltr {
+        font-family: 'Space Grotesk', 'DejaVu Sans', Arial, sans-serif;
+        font-weight: 700;
+        font-size: 108px;
+      }
+    </style>
+  </defs>
+  <text x="28" y="152" class="ltr" fill="#EDEDED">
+    Inter<tspan fill="#D97706">v</tspan>ux
+  </text>
+</svg>

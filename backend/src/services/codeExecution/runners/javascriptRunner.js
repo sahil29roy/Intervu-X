@@ -79,13 +79,15 @@ await import('./solution_${runId}.mjs');
       clearTimeout(timeout);
       const executionTimeMs = Date.now() - startTime;
 
-      // Clean up temp files asynchronously
-      try {
-        if (fs.existsSync(solutionPath)) fs.unlinkSync(solutionPath);
-        if (fs.existsSync(wrapperPath)) fs.unlinkSync(wrapperPath);
-      } catch (err) {
-        console.error("Cleanup error in JS runner:", err.message);
-      }
+      // Clean up temp files asynchronously with a slight delay to allow Windows to release file locks
+      setTimeout(() => {
+        try {
+          if (fs.existsSync(solutionPath)) fs.unlinkSync(solutionPath);
+          if (fs.existsSync(wrapperPath)) fs.unlinkSync(wrapperPath);
+        } catch (err) {
+          console.error("Cleanup error in JS runner:", err.message);
+        }
+      }, 100);
 
       if (isTimeout) {
         resolve({
